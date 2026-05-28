@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Familia Vila Villar — Lugares de interés</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #1a2744;
+      --gold: #c9a84c;
+      --gold-light: #e8c87a;
+      --cream: #f8f4ed;
+      --cream-dark: #ede8df;
+      --text: #2c2416;
+      --text-light: #6b5d4a;
+      --red: #8b2020;
+      --green: #2a5c3f;
+      --blue: #1a3a6b;
+      --yellow: #8b7520;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'EB Garamond', Georgia, serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--navy);
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: 
+        repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(201,168,76,0.03) 40px, rgba(201,168,76,0.03) 41px),
+        repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(201,168,76,0.03) 40px, rgba(201,168,76,0.03) 41px);
+    }
+
+    .header-ornament {
+      color: var(--gold);
+      font-size: 1rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      font-family: 'Cinzel', serif;
+      font-weight: 400;
+      opacity: 0.7;
+      margin-bottom: 0.75rem;
+    }
+
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.4rem, 5vw, 2.4rem);
+      font-weight: 600;
+      color: var(--cream);
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+      position: relative;
+    }
+
+    header h1 span {
+      color: var(--gold);
+    }
+
+    .header-subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: rgba(248,244,237,0.6);
+      font-size: 1.05rem;
+      margin-top: 0.6rem;
+      letter-spacing: 0.05em;
+    }
+
+    .header-line {
+      width: 80px;
+      height: 1px;
+      background: var(--gold);
+      margin: 1.2rem auto 0;
+      opacity: 0.6;
+    }
+
+    /* LEGEND */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      justify-content: center;
+      padding: 1rem 1.5rem;
+      background: var(--navy);
+      border-top: 1px solid rgba(201,168,76,0.2);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      color: rgba(248,244,237,0.65);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* FILTERS */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 1.2rem 1.5rem;
+      background: var(--cream-dark);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      justify-content: center;
+    }
+
+    .filter-btn {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.9rem;
+      border: 1px solid var(--navy);
+      background: transparent;
+      color: var(--navy);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 0;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--navy);
+      color: var(--cream);
+    }
+
+    /* FOLDERS */
+    .content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    .folder {
+      margin-bottom: 2rem;
+    }
+
+    .folder-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .folder-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--navy);
+    }
+
+    .folder-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--navy), transparent);
+      opacity: 0.2;
+    }
+
+    .folder-count {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* PLACE CARDS */
+    .places-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .place-card {
+      background: white;
+      border-left: 3px solid var(--navy);
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .place-card:hover {
+      transform: translateX(3px);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+
+    .place-card.type-domicilio { border-left-color: var(--blue); }
+    .place-card.type-iglesia { border-left-color: var(--yellow); }
+    .place-card.type-cementerio { border-left-color: var(--green); }
+    .place-card.type-historico { border-left-color: var(--red); }
+
+    .place-card.hidden { display: none; }
+
+    .place-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+
+    .place-icon {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 0.45rem;
+      flex-shrink: 0;
+    }
+
+    .type-domicilio .place-icon { background: var(--blue); }
+    .type-iglesia .place-icon { background: var(--yellow); }
+    .type-cementerio .place-icon { background: var(--green); }
+    .type-historico .place-icon { background: var(--red); }
+
+    .place-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+      flex: 1;
+    }
+
+    .place-arrow {
+      color: var(--text-light);
+      font-size: 0.8rem;
+      transition: transform 0.2s;
+      margin-top: 0.2rem;
+      flex-shrink: 0;
+    }
+
+    .place-card.open .place-arrow { transform: rotate(90deg); }
+
+    .place-description {
+      display: none;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--cream-dark);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    .place-card.open .place-description { display: block; }
+
+    .place-map-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.75rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--navy);
+      text-decoration: none;
+      border-bottom: 1px solid var(--gold);
+      padding-bottom: 1px;
+      font-style: normal;
+    }
+
+    /* SEARCH */
+    .search-wrap {
+      padding: 1rem 1.5rem;
+      background: var(--cream);
+      border-bottom: 1px solid var(--cream-dark);
+    }
+
+    .search-input {
+      width: 100%;
+      max-width: 400px;
+      display: block;
+      margin: 0 auto;
+      padding: 0.6rem 1rem;
+      font-family: 'EB Garamond', serif;
+      font-size: 1rem;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: white;
+      color: var(--text);
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--navy);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background: var(--navy);
+      color: rgba(248,244,237,0.4);
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-light);
+      font-style: italic;
+      font-size: 1.1rem;
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      .place-name { font-size: 0.95rem; }
+      .place-description { font-size: 0.88rem; }
+    }
+
+    /* MAP */
+    #map-section {
+      background: var(--cream-dark);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+
+    #map-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.5rem;
+      cursor: pointer;
+      user-select: none;
+      background: var(--cream-dark);
+    }
+
+    #map-section-header:hover { background: #e5dfd5; }
+
+    .map-toggle-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--navy);
+    }
+
+    .map-toggle-arrow {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      transition: transform 0.25s;
+    }
+
+    #map-section.map-open .map-toggle-arrow { transform: rotate(180deg); }
+
+    #map-container {
+      display: none;
+      height: 420px;
+    }
+
+    #map-section.map-open #map-container { display: block; }
+
+    #map { height: 100%; width: 100%; }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 0 !important;
+      border-left: 3px solid var(--navy);
+      font-family: 'EB Garamond', Georgia, serif;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+    }
+
+    .leaflet-popup-content {
+      margin: 0.75rem 1rem !important;
+    }
+
+    .popup-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+      margin-bottom: 0.3rem;
+    }
+
+    .popup-folder {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .popup-desc {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: #4a3f30;
+      font-style: italic;
+      margin-top: 0.5rem;
+      border-top: 1px solid #ede8df;
+      padding-top: 0.5rem;
+    }
+
+    /* highlight active card */
+    .place-card.map-highlight {
+      background: #fffbf0;
+      box-shadow: 0 0 0 2px var(--gold);
+    }
+
+    @media (max-width: 600px) {
+      #map-container { height: 300px; }
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-ornament">Extracto Histórico</div>
+  <h1>Familia <span>Vila Villar</span></h1>
+  <div class="header-subtitle">Lugares de interés histórico</div>
+  <div class="header-line"></div>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#1a3a6b"></div>Domicilio</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8b7520"></div>Iglesia</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2a5c3f"></div>Cementerio</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8b2020"></div>Lugar histórico</div>
+</div>
+
+<div class="search-wrap">
+  <input class="search-input" type="text" placeholder="Buscar lugar o persona…" id="searchInput" oninput="filterSearch()">
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" onclick="filterType('all', this)">Todos</button>
+  <button class="filter-btn" onclick="filterType('domicilio', this)">Domicilios</button>
+  <button class="filter-btn" onclick="filterType('iglesia', this)">Iglesias</button>
+  <button class="filter-btn" onclick="filterType('cementerio', this)">Cementerios</button>
+  <button class="filter-btn" onclick="filterType('historico', this)">Históricos</button>
+</div>
+
+
+<div id="map-section">
+  <div id="map-section-header" onclick="toggleMap()">
+    <span class="map-toggle-label">🗺  Mapa interactivo</span>
+    <span class="map-toggle-arrow">▾</span>
+  </div>
+  <div id="map-container">
+    <div id="map"></div>
+  </div>
+</div>
+
+<div class="content" id="content">
+
+  <!-- LA CORUÑA -->
+  <div class="folder" data-folder="La Coruña">
+    <div class="folder-header">
+      <div class="folder-title">La Coruña</div>
+      <div class="folder-line"></div>
+      <div class="folder-count">16 lugares</div>
+    </div>
+    <div class="places-grid">
+
+      <div class="place-card type-domicilio" data-text="rúa nueva 15 josé antonio de vila arresto" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Rúa Nueva 15 — Casa de José Antonio de Vila</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa del tátara-tátara abuelo José Antonio de Vila y su familia. Aquí tuvo lugar su arresto en la madrugada del 4 al 5 de abril de 1831, acusado de conspirar contra Fernando VII.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3693977,-8.4028387" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="plaza maría pita augusto josé de vila" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Plaza de María Pita 1 y 2 — Casa de Augusto José de Vila</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa del tátara-abuelo Augusto José de Vila y León y su familia.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.371372,-8.3953604" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="avenida rubine jacoba vila fano manuel de vierna" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Avenida de Rubine 15 — Casa de Jacoba Vila Fano y Manuel de Vierna</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de Manuel de Vierna y Belando y Jacoba Vila Fano, hermana del abuelo José Vila Fano. Aquí pasó largas temporadas el padre de los autores, Eduardo Vila Patiño. Aquí murió Jacoba Vila Fano el 31 de octubre de 1967.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3677889,-8.409419" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="avenida marina 22 eduardo vila algorri" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Avenida de la Marina 22 — Casa de Eduardo Vila Algorri</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa del bisabuelo Eduardo Vila Algorri y su familia.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3696825,-8.4001016" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle real 2 justo pastor de fano" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle Real 2 — Casa de Justo Pastor de Fano</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de nuestro tátara-abuelo, Justo Pastor de Fano y familia.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3704826,-8.3991448" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle galera 3 justo pastor de fano" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle de la Galera 3 — Casa de Justo Pastor de Fano</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de nuestro tátara-abuelo, Justo Pastor de Fano y familia.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3708119,-8.3994792" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle falperra 4 justo pastor de fano" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle de la Falperra 4 — Casa de Justo Pastor de Fano</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de nuestro tátara-abuelo, Justo Pastor de Fano y familia.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3587557,-8.4058364" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle riego del agua francisca díaz carcaño justo pastor" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle Riego del Agua 13 y 15</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa en la que murió nuestra tátara-abuela, Francisca Díaz Carcaño, mujer de Justo Pastor de Fano, en mayo de 1903.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3705754,-8.3973166" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="comandante barja riazor josé vila fano verano" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle del Comandante Barja 6 (hoy Riazor) — Casa de verano</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de verano de nuestro abuelo José Vila Fano y familia. Posteriormente sería la casa de verano de la familia Vila Villar durante unos años. La calle cambió de nombre en enero de 2016 a calle Riazor.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3675372,-8.4108311" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="monolito eduardo vila algorri puerto coruña" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Monolito D. Eduardo Vila y Algorri — Puerto de La Coruña</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          En el puerto de La Coruña hay una calle que lleva su nombre, junto con un monolito en su recuerdo, colocado en 2012 como parte de un homenaje que le hizo la ciudad. La calle no aparece en Google Maps pero está en el muelle de transatlánticos.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3689285,-8.39854" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="pazo vilaboa rutis culleredo ricardo seco luis villar" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Pazo de Vilaboa (Rutis) — Casa de verano familia Villar Seco</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Antes llamado Pazo de La Milagrosa, comprado por nuestro bisabuelo Ricardo Seco de la Garza en noviembre de 1940. Nuestro abuelo Luis Villar Molina se lo compraría a Ricardo posteriormente en dos mitades, una en 1941 y otra en 1948. Fue la casa de verano de la familia Villar Seco. En el antiguo pueblo de Vilaboa, hoy villa de Rutis.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3225693,-8.3834441" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="iglesia san jorge bautizos vila león" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Iglesia de San Jorge — Bautizos familia Vila y León</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Abierta al culto en 1766, estilo barroco con toques compostelanos. Aquí bautizaron a Josefa, Augusto José, Sofía, Eduardo y Constantino de Vila y León, hijos de José Antonio de Vila y Fermina de León. También se celebró aquí el funeral de Josefa de Vila y León.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3716814,-8.3969317" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="iglesia san nicolás bautizos funerales vila enriqueta eduardo patiño" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Iglesia de San Nicolás — Bautizos y funerales familia Vila</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Templo original de 1348, reconstruido en el s. XVIII. Aquí bautizaron a Enriqueta de Vila y León y al padre, Eduardo Vila Patiño. Funerales de Constantino de Vila y León, Fermina de León, Gertrudis Algorri Urioste, Bibiana Urioste Cabiedes, Sofía Vila Algorri y Eliseo Vila Fano.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.371377,-8.398451" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="parroquia santiago románica peregrinos camino inglés francisco vila fano" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Parroquia de Santiago — La más antigua de la ciudad</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Es la más antigua de la ciudad, buen ejemplo del románico gallego. Del siglo XII, estaba pensada para atender a los peregrinos del Camino de Santiago que llegaban por mar y comenzaban aquí el conocido como Camino Inglés. En esta iglesia se celebró el funeral de Francisco Vila Fano, uno de los hijos del segundo matrimonio de nuestro tátara-abuelo Augusto José de Vila con Francisca Fano Díaz.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.3696086,-8.3941265" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-cementerio" data-text="cementerio san amaro nichos vila josé antonio fermina bibiana eduardo algorri" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Cementerio Municipal San Amaro — Nichos familia Vila</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Inaugurado en 1812, estaba dividido en 4 zonas, correspondientes a las parroquias de la ciudad de aquel entonces: Santa María, Santiago, San Jorge y San Nicolás. Nichos de la familia Vila: José Antonio de Vila y Fermina de León (nicho 40/4R, línea Santiago); Bibiana Urioste Cabiedes y Eduardo Vila Algorri (nicho 1, primer departamento); Gertrudis Algorri Urioste, Sofía Vila Algorri y Francisco Vila Fano (nicho 145, línea San Nicolás).
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.37767,-8.396739" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-historico" data-text="castillo san antón prisión josé antonio de vila 1831 conspiracion masónica" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Castillo de San Antón — Prisión de José Antonio de Vila (1831)</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Fortaleza del s. XVI. Aquí estuvo probablemente preso José Antonio de Vila entre abril y octubre de 1831, acusado de conspiración masónica contra Fernando VII. En aquella época era cárcel destinada a presos políticos.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.365744,-8.387782" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FERROL -->
+  <div class="folder" data-folder="Ferrol y La Graña">
+    <div class="folder-header">
+      <div class="folder-title">Ferrol y La Graña</div>
+      <div class="folder-line"></div>
+      <div class="folder-count">5 lugares</div>
+    </div>
+    <div class="places-grid">
+
+      <div class="place-card type-historico" data-text="astillero reverbero augusto josé de vila construcción naval cañoneros" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Astillero del Reverbero — La Graña, Ferrol</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Comprado por Augusto José de Vila el 18 de febrero de 1861. Reconvertido para construcción naval en 1889. Construyó tres cañoneros torpederos y tres avisos torpederos (María de Molina, Álvaro de Bazán y Marqués de la Victoria). Incautado por el Estado en 1898 tras un largo litigio.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.4773011,-8.2601288" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-historico" data-text="dique cabaña augusto josé de vila astilleros" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Dique de la Cabaña</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Dique de mareas adquirido por nuestro tátara-abuelo Augusto José de Vila en enero de 1869 y que formó parte de los Astilleros hasta su venta en 1883, conservando la familia los Astilleros del Reverbero, que luego serían conocidos como los Astilleros de Vila y Cía hasta su incautación por el Estado en 1898.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.4858034,-8.258717" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="iglesia san julián ferrol fermín de vila bautizo" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Iglesia de San Julián — Ferrol, bautizo de Fermín de Vila y León</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Construida en 1765. Aquí bautizaron a Fermín de Vila y León, primogénito de José Antonio de Vila y Fermina de León (17 de septiembre de 1813).
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.4821243,-8.2350786" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="parroquia san andrés graña francisco vila fano bautizo" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Parroquia de San Andrés de La Graña</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Aquí fue bautizado Francisco José Augusto Vila Fano, el primer hijo de D. Augusto José de Vila y Dª Francisca Fano Díaz.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.4792014,-8.2625169" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-historico" data-text="museo construcción naval ferrol astillero augusto josé vila" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Museo de la Construcción Naval — Ferrol</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          En este museo está citado el Astillero del Reverbero como uno de los pocos astilleros de iniciativa privada de Ferrol; también hay mención a su propietario, Augusto José de Vila, aunque aparece equivocadamente como Augusto José de la Vila.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.4828958,-8.2311031" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MALPICA -->
+  <div class="folder" data-folder="Malpica de Bergantiños">
+    <div class="folder-header">
+      <div class="folder-title">Malpica de Bergantiños</div>
+      <div class="folder-line"></div>
+      <div class="folder-count">1 lugar</div>
+    </div>
+    <div class="places-grid">
+
+      <div class="place-card type-historico" data-text="puerto malpica eduardo vila fano obra ingeniería" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Puerto de Malpica — Obra de Eduardo Vila Fano</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Puerto pesquero proyectado por Eduardo Vila Fano, hermano del abuelo José. Diseñado con una compuerta que se cerraba en días de mala mar. Existe una calle con su nombre en el pueblo.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=43.323779,-8.808161" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MADRID -->
+  <div class="folder" data-folder="Madrid">
+    <div class="folder-header">
+      <div class="folder-title">Madrid</div>
+      <div class="folder-line"></div>
+      <div class="folder-count">16 lugares</div>
+    </div>
+    <div class="places-grid">
+
+      <div class="place-card type-domicilio" data-text="calle jacometrezo eustaquio peralta sanz casa natal" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle Jacometrezo 18 — Casa natal de Eustaquio Peralta Sanz</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Aquí nació el tátara-tátara abuelo Eustaquio Peralta Sanz el 2 de noviembre de 1813, hijo de Gerónimo Peralta y María de la Concepción Sanz.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4202633,-3.7077675" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle fomento 34 eustaquio peralta maría del pilar maroto" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle de Fomento 34 — Primera casa de Eustaquio Peralta Sanz</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Primera casa de nuestros tátara-tátara abuelos Eustaquio Peralta Sanz y María del Pilar Maroto Herrero. Aquí muere esta última el 13 de diciembre de 1820.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4220314,-3.7108397" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle leganitos 59 eustaquio peralta testamento" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle de Leganitos 59 — Segunda casa de Eustaquio Peralta Sanz</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Segunda casa de Eustaquio Peralta Sanz, en la que escribe su testamento el 7 de agosto de 1886.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4243625,-3.712057" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle puebla 4 eustaquio peralta sanz muerte luis ernesto villar" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle de la Puebla 4 — Tercera casa de Eustaquio Peralta Sanz</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Tercera casa de Eustaquio Peralta Sanz en la que acogió a su hija María Peralta Maroto y a sus nietos Luis y Ernesto Villar Peralta, y en donde muere el 15 de diciembre de 1887.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4220491,-3.7021137" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle villanueva 6 ricardo seco vittini emilia garza puig bisabuelo" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle de Villanueva 6 — Casa de Ricardo Seco y Vittini</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de nuestros tátara-abuelos Ricardo Seco y Vittini y Emilia de la Garza Puig, en donde nació su hijo y nuestro bisabuelo Ricardo Seco de la Garza el 10 de septiembre de 1879. Aquí vivió parte de su infancia, hasta su marcha a La Habana (Cuba).
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4226642,-3.6893706" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle modesto lafuente 36 abuelos josé vila fano bernarda patiño" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle Modesto Lafuente 36 — Casa de los abuelos Vila Fano / Patiño Hermida</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de los abuelos José Vila Fano y Bernarda Patiño Hermida en Madrid.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4400033,-3.696007" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle orense 17 familia vila villar isabel pilar eduardo jacobo" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle de Orense 17 — Segunda casa de la familia Vila Villar</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Segunda casa de la familia Vila Villar, en la que nacen Isabel, Pilar, Eduardo y Jacobo.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4499234,-3.695395" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle santa engracia 150 familia vila villar bernarda patiño eduardo patiño pilar villar" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle Santa Engracia 150 — Casa familia Vila Villar</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Tercera casa de la familia Vila Villar. Aquí murió Bernarda Patiño Hermida el 9 de noviembre de 1985 y Eduardo Vila Patiño el 11 de noviembre de 2020.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.444992,-3.702783" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="calle general moscardó edgar neville isabel seco san martín" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle General Moscardó 18 (hoy Edgar Neville 15) — Casa de Isabel Seco San Martín</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de Isabel Seco San Martín en Madrid. La calle cambió de nombre y numeración. Actualmente es Edgar Neville, 15.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4485608,-3.6973111" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="cerro del aire majadahonda abuela isabel seco infancia nietos" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle del Cerro del Aire 29 (hoy nº 13), Majadahonda — Casa de verano de la abuela Isabel</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de verano de nuestra abuela Isabel Seco San Martín en Majadahonda y en la que muere el 19 de octubre de 1985. En esta casa todos sus nietos disfrutamos nuestra infancia.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4773536,-3.8637438" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-domicilio" data-text="cuevas del mar la berzosa hoyo manzanares casa verano vila villar infancia" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Calle Cuevas del Mar 6, La Berzosa (Hoyo de Manzanares) — Casa de verano Vila Villar</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa de verano de la familia Vila Villar, en la Urbanización "La Berzosa" de Hoyo de Manzanares. Aquí pasamos una buena parte de nuestra infancia y disfrutamos muchísimo. La casa se vendió en abril de 2021.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.5996522,-3.9376123" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="iglesia san martín eustaquio peralta sanz bautizo plaza descalzas" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Iglesia Parroquial de San Martín — Bautizo de Eustaquio Peralta Sanz</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          En esta iglesia bautizaron a nuestro tátara-tátara abuelo Eustaquio Peralta Sanz el cuatro de noviembre de 1813. Estaba ubicada en la plaza de las Descalzas. Derruida a principios del s. XIX durante el reinado de José Bonaparte, la parroquia se trasladó a su actual ubicación en la calle Desengaño.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4182197,-3.7062974" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="iglesia san josé bautizo maría maroto herrero ricardo seco garza" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Iglesia Parroquial de San José — Bautizos Maroto y Seco</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          En esta iglesia bautizaron a nuestra tátara-tátara abuela María Maroto Herrero el 13 de diciembre de 1820. También bautizaron aquí a nuestro bisabuelo Ricardo Seco de la Garza en septiembre de 1879.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4190999,-3.6966382" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="iglesia san luis bautizo maría peralta maroto ernesto incendiada 1936 demolida 1943" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Iglesia Parroquial de San Luis — Bautizos Peralta Maroto (ya no existe)</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          En esta iglesia bautizaron a nuestra tátara-abuela María Peralta Maroto el 3 de mayo de 1847 y a su hermano Ernesto el 6 de febrero de 1846. Bajo la advocación del santo Luis de Anjou, se construyó entre 1679 y 1689. Estaba situada en la parte alta de la calle Montera. Actualmente ya no existe. Fue incendiada el 13 de marzo de 1936 en los episodios de quema de iglesias y conventos previos al inicio de la guerra. Se demolió en 1943.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4198875,-3.7016064" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-iglesia" data-text="iglesia san agustín boda padres eduardo vila patiño pilar villar seco 1963" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Iglesia Parroquial de San Agustín — Boda de nuestros padres</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          En esta iglesia contrajeron matrimonio nuestros padres Eduardo Vila Patiño y Pilar Villar Seco el 22 de octubre de 1963.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4457837,-3.6872238" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-cementerio" data-text="cementerio sacramental san martín maría maroto herrero vallehermoso" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Cementerio Sacramental de San Martín — María Maroto Herrero</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Aquí enterraron a nuestra tátara-tátara abuela, María Maroto Herrero, fallecida el 12 de marzo de 1876. El cementerio se construyó en 1849 y fue uno de los más importantes de Madrid hasta su clausura en los primeros años del siglo XX. En su lugar se construyó el Estadio Vallehermoso.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.4415625,-3.7097402" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-cementerio" data-text="cementerio carabanchel sur abuelos josé vila fano bernarda patiño" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Cementerio de Carabanchel Sur — Abuelos José Vila Fano y Bernarda Patiño</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Aquí están enterrados los abuelos José Vila Fano y Bernarda Patiño Hermida. Zona Adultos, Sección 8E, fila 5, nicho 21.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.3666941,-3.7262719" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-cementerio" data-text="cementerio cristo del pardo abuelos luis villar molina isabel seco san martín" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Cementerio El Cristo del Pardo — Abuelos Luis Villar Molina e Isabel Seco</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Aquí están enterrados los abuelos Luis Villar Molina e Isabel Seco San Martín.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.518593,-3.789346" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-cementerio" data-text="cementerio las rozas eduardo vila patiño padre columbario" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Cementerio Municipal Las Rozas — Eduardo Vila Patiño</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Aquí está enterrado nuestro padre, Eduardo Vila Patiño. Columbario calle G, fila 2, número 17.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=40.505022,-3.886675" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TUDELA -->
+  <div class="folder" data-folder="Tudela">
+    <div class="folder-header">
+      <div class="folder-title">Tudela (Navarra)</div>
+      <div class="folder-line"></div>
+      <div class="folder-count">1 lugar</div>
+    </div>
+    <div class="places-grid">
+
+      <div class="place-card type-domicilio" data-text="plaza constitución tudela juan villar anchorena casa natal marcos villar avelina anchorena" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Plaza de la Constitución — Casa natal de Juan Villar Anchorena</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Casa familiar de Marcos Villar Ladero y Avelina Anchorena Tellería. Aquí nació el tátara-abuelo Juan Villar Anchorena el 27 de mayo de 1841.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=42.0598075,-1.6065505" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INTERNACIONAL -->
+  <div class="folder" data-folder="Internacional">
+    <div class="folder-header">
+      <div class="folder-title">Lugares internacionales</div>
+      <div class="folder-line"></div>
+      <div class="folder-count">5 lugares</div>
+    </div>
+    <div class="places-grid">
+
+      <div class="place-card type-historico" data-text="bad oldesloe hamburgo fermín augusto josé constantino vila estudios muerte" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Bad Oldesloe, Hamburgo — Estudios de los hijos de José Antonio de Vila</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Aquí estudiaron Fermín, Augusto José y Constantino de Vila y León entre 1828 y 1835. Fermín murió en esta ciudad en el invierno de 1829 con solo 16 años. Su tumba se conserva en el cementerio local.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=53.8120647,10.3723713" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-historico" data-text="islington londres fermín de vila estudios cartas" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Islington, Londres — Estudios de Fermín de Vila y León</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Barrio de Londres donde estudió Fermín de Vila y León, probablemente entre 1827 y 1828. Aquí escribió las cartas a su padre que se conservan entre los documentos de la familia.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=51.5362,-0.1033" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-historico" data-text="crediton devon reino unido augusto josé de vila estudios" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Crediton, Devon (Reino Unido) — Estudios de Augusto José de Vila</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Localidad a 250 km de Londres donde estudió Augusto José de Vila y León durante su etapa formativa en el extranjero.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=50.7942,-3.6506" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-historico" data-text="rue chalgrin paris muerte augusto josé de vila 1874" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Rue Chalgrin 16, París — Muerte de Augusto José de Vila (1874)</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Aquí murió el tátara-abuelo Augusto José de Vila y León el 28 de julio de 1874, a los 55 años.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=48.874927,2.2891324" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+      <div class="place-card type-historico" data-text="zamboanga filipinas mindanao muerte juan villar anchorena 1874 destino militar" onclick="toggleCard(this)">
+        <div class="place-card-header">
+          <div class="place-icon"></div>
+          <div class="place-name">Zamboanga, Filipinas — Muerte de Juan Villar Anchorena (1874)</div>
+          <div class="place-arrow">›</div>
+        </div>
+        <div class="place-description">
+          Ciudad de la isla de Mindanao donde murió el tátara-abuelo Juan Villar Anchorena el 2 de abril de 1874, durante su destino militar en Filipinas.
+          <br><a class="place-map-link" href="https://www.google.com/maps?q=6.9082783,122.0757384" target="_blank">Ver en Google Maps ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">No se encontraron lugares para esta búsqueda.</div>
+
+</div>
+
+<footer>
+  Familia Vila Villar &mdash; Extracto Histórico y Reconstrucción del Árbol Genealógico &mdash; 3ª Edición, 2026
+</footer>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // ── MAP DATA ──────────────────────────────────────────────────────────────
+  const places = [
+    // LA CORUÑA
+    { id: 0,  lat: 43.3693977, lng: -8.4028387, name: "Rúa Nueva 15 — Casa de José Antonio de Vila",                        folder: "La Coruña", type: "domicilio",  desc: "Casa del tátara-tátara abuelo José Antonio de Vila y su familia. Aquí tuvo lugar su arresto en la madrugada del 4 al 5 de abril de 1831, acusado de conspirar contra Fernando VII." },
+    { id: 1,  lat: 43.371372,  lng: -8.3953604, name: "Plaza de María Pita 1 y 2 — Casa de Augusto José de Vila",           folder: "La Coruña", type: "domicilio",  desc: "Casa del tátara-abuelo Augusto José de Vila y León y su familia." },
+    { id: 2,  lat: 43.3677889, lng: -8.409419,  name: "Avenida de Rubine 15 — Casa de Jacoba Vila Fano y Manuel de Vierna", folder: "La Coruña", type: "domicilio",  desc: "Casa de Manuel de Vierna y Belando y Jacoba Vila Fano, hermana del abuelo José Vila Fano. Aquí pasó largas temporadas el padre, Eduardo Vila Patiño. Aquí murió Jacoba Vila Fano el 31 de octubre de 1967." },
+    { id: 3,  lat: 43.3696825, lng: -8.4001016, name: "Avenida de la Marina 22 — Casa de Eduardo Vila Algorri",             folder: "La Coruña", type: "domicilio",  desc: "Casa del bisabuelo Eduardo Vila Algorri y su familia." },
+    { id: 4,  lat: 43.3704826, lng: -8.3991448, name: "Calle Real 2 — Casa de Justo Pastor de Fano",                       folder: "La Coruña", type: "domicilio",  desc: "Casa de nuestro tátara-abuelo Justo Pastor de Fano y familia." },
+    { id: 5,  lat: 43.3708119, lng: -8.3994792, name: "Calle de la Galera 3 — Casa de Justo Pastor de Fano",               folder: "La Coruña", type: "domicilio",  desc: "Casa de nuestro tátara-abuelo Justo Pastor de Fano y familia." },
+    { id: 6,  lat: 43.3587557, lng: -8.4058364, name: "Calle de la Falperra 4 — Casa de Justo Pastor de Fano",             folder: "La Coruña", type: "domicilio",  desc: "Casa de nuestro tátara-abuelo Justo Pastor de Fano y familia." },
+    { id: 7,  lat: 43.3705754, lng: -8.3973166, name: "Calle Riego del Agua 13 y 15",                                      folder: "La Coruña", type: "domicilio",  desc: "Casa en la que murió nuestra tátara-abuela Francisca Díaz Carcaño, mujer de Justo Pastor de Fano, en mayo de 1903." },
+    { id: 8,  lat: 43.3675372, lng: -8.4108311, name: "Calle del Comandante Barja 6 (hoy Riazor) — Casa de verano",        folder: "La Coruña", type: "domicilio",  desc: "Casa de verano del abuelo José Vila Fano y familia. Posteriormente sería la casa de verano de la familia Vila Villar durante unos años. La calle cambió de nombre en enero de 2016 a calle Riazor." },
+    { id: 9,  lat: 43.3689285, lng: -8.39854,   name: "Monolito Eduardo Vila y Algorri — Puerto de La Coruña",             folder: "La Coruña", type: "domicilio",  desc: "En el puerto de La Coruña hay una calle que lleva su nombre, junto con un monolito en su recuerdo, colocado en 2012 como parte de un homenaje que le hizo la ciudad. La calle está en el muelle de transatlánticos." },
+    { id: 10, lat: 43.3225693, lng: -8.3834441, name: "Pazo de Vilaboa (Rutis) — Casa de verano familia Villar Seco",      folder: "La Coruña", type: "domicilio",  desc: "Antes llamado Pazo de La Milagrosa, comprado por el bisabuelo Ricardo Seco de la Garza en noviembre de 1940. El abuelo Luis Villar Molina se lo compraría en dos mitades, en 1941 y 1948. Fue la casa de verano de la familia Villar Seco. En el antiguo pueblo de Vilaboa, hoy villa de Rutis." },
+    { id: 11, lat: 43.3716814, lng: -8.3969317, name: "Iglesia de San Jorge — Bautizos familia Vila y León",               folder: "La Coruña", type: "iglesia",    desc: "Abierta al culto en 1766, estilo barroco con toques compostelanos. Aquí bautizaron a Josefa, Augusto José, Sofía, Eduardo y Constantino de Vila y León, hijos de José Antonio de Vila y Fermina de León. También se celebró aquí el funeral de Josefa de Vila y León." },
+    { id: 12, lat: 43.371377,  lng: -8.398451,  name: "Iglesia de San Nicolás — Bautizos y funerales familia Vila",        folder: "La Coruña", type: "iglesia",    desc: "Templo original de 1348, reconstruido en el s. XVIII. Aquí bautizaron a Enriqueta de Vila y León y al padre Eduardo Vila Patiño. Funerales de Constantino de Vila y León, Fermina de León, Gertrudis Algorri Urioste, Bibiana Urioste Cabiedes, Sofía Vila Algorri y Eliseo Vila Fano." },
+    { id: 13, lat: 43.3696086, lng: -8.3941265, name: "Parroquia de Santiago — La más antigua de la ciudad",               folder: "La Coruña", type: "iglesia",    desc: "La más antigua de la ciudad, buen ejemplo del románico gallego. Del siglo XII, estaba pensada para atender a los peregrinos que llegaban por mar y comenzaban aquí el Camino Inglés. Aquí se celebró el funeral de Francisco Vila Fano, uno de los hijos del segundo matrimonio de Augusto José de Vila con Francisca Fano Díaz." },
+    { id: 14, lat: 43.37767,   lng: -8.396739,  name: "Cementerio Municipal San Amaro — Nichos familia Vila",              folder: "La Coruña", type: "cementerio", desc: "Inaugurado en 1812. Nichos de la familia: José Antonio de Vila y Fermina de León (nicho 40/4R, línea Santiago); Bibiana Urioste Cabiedes y Eduardo Vila Algorri (nicho 1, primer departamento); Gertrudis Algorri Urioste, Sofía Vila Algorri y Francisco Vila Fano (nicho 145, línea San Nicolás)." },
+    { id: 15, lat: 43.365744,  lng: -8.387782,  name: "Castillo de San Antón — Prisión de José Antonio de Vila (1831)",   folder: "La Coruña", type: "historico",  desc: "Fortaleza del s. XVI, hoy Museo Arqueológico. Aquí estuvo probablemente preso José Antonio de Vila entre abril y octubre de 1831, acusado de conspiración masónica contra Fernando VII. En esa época era cárcel para presos políticos." },
+    // FERROL
+    { id: 16, lat: 43.4773011, lng: -8.2601288, name: "Astillero del Reverbero — La Graña, Ferrol",                       folder: "Ferrol y La Graña", type: "historico",  desc: "Comprado por Augusto José de Vila el 18 de febrero de 1861. Reconvertido para construcción naval en 1889. Construyó tres cañoneros torpederos y tres avisos torpederos (María de Molina, Álvaro de Bazán y Marqués de la Victoria). Incautado por el Estado en 1898 tras un largo litigio." },
+    { id: 17, lat: 43.4858034, lng: -8.258717,  name: "Dique de la Cabaña",                                               folder: "Ferrol y La Graña", type: "historico",  desc: "Dique de mareas adquirido por Augusto José de Vila en enero de 1869, que formó parte de los Astilleros hasta su venta en 1883, conservando la familia los Astilleros del Reverbero hasta su incautación por el Estado en 1898." },
+    { id: 18, lat: 43.4821243, lng: -8.2350786, name: "Iglesia de San Julián — Ferrol",                                   folder: "Ferrol y La Graña", type: "iglesia",    desc: "Construida en 1765. Aquí bautizaron a Fermín de Vila y León, primogénito de José Antonio de Vila y Fermina de León (17 de septiembre de 1813)." },
+    { id: 19, lat: 43.4792014, lng: -8.2625169, name: "Parroquia de San Andrés de La Graña",                              folder: "Ferrol y La Graña", type: "iglesia",    desc: "Aquí fue bautizado Francisco José Augusto Vila Fano, el primer hijo de Augusto José de Vila y Francisca Fano Díaz." },
+    { id: 20, lat: 43.4828958, lng: -8.2311031, name: "Museo de la Construcción Naval — Ferrol",                          folder: "Ferrol y La Graña", type: "historico",  desc: "En este museo está citado el Astillero del Reverbero como uno de los pocos astilleros de iniciativa privada de Ferrol; también hay mención a su propietario, Augusto José de Vila, aunque aparece equivocadamente como Augusto José de la Vila." },
+    // MALPICA
+    { id: 21, lat: 43.323779,  lng: -8.808161,  name: "Puerto de Malpica — Obra de Eduardo Vila Fano",                   folder: "Malpica de Bergantiños", type: "historico", desc: "Puerto pesquero proyectado por Eduardo Vila Fano, hermano del abuelo José. Diseñado con una compuerta que se cerraba en días de mala mar. Existe una calle con su nombre en el pueblo." },
+    // MADRID
+    { id: 22, lat: 40.4202633, lng: -3.7077675, name: "Calle Jacometrezo 18 — Casa natal de Eustaquio Peralta Sanz",     folder: "Madrid", type: "domicilio",  desc: "Aquí nació el tátara-tátara abuelo Eustaquio Peralta Sanz el 2 de noviembre de 1813, hijo de Gerónimo Peralta y María de la Concepción Sanz." },
+    { id: 23, lat: 40.4220314, lng: -3.7108397, name: "Calle de Fomento 34 — Primera casa de Eustaquio Peralta Sanz",    folder: "Madrid", type: "domicilio",  desc: "Primera casa de los tátara-tátara abuelos Eustaquio Peralta Sanz y María del Pilar Maroto Herrero. Aquí muere esta última el 13 de diciembre de 1820." },
+    { id: 24, lat: 40.4243625, lng: -3.712057,  name: "Calle de Leganitos 59 — Segunda casa de Eustaquio Peralta Sanz",  folder: "Madrid", type: "domicilio",  desc: "Segunda casa de Eustaquio Peralta Sanz, en la que escribe su testamento el 7 de agosto de 1886." },
+    { id: 25, lat: 40.4220491, lng: -3.7021137, name: "Calle de la Puebla 4 — Tercera casa de Eustaquio Peralta Sanz",   folder: "Madrid", type: "domicilio",  desc: "Tercera casa de Eustaquio Peralta Sanz en la que acogió a su hija María Peralta Maroto y a sus nietos Luis y Ernesto Villar Peralta, y en donde muere el 15 de diciembre de 1887." },
+    { id: 26, lat: 40.4226642, lng: -3.6893706, name: "Calle de Villanueva 6 — Casa de Ricardo Seco y Vittini",          folder: "Madrid", type: "domicilio",  desc: "Casa de los tátara-abuelos Ricardo Seco y Vittini y Emilia de la Garza Puig, en donde nació el bisabuelo Ricardo Seco de la Garza el 10 de septiembre de 1879. Aquí vivió parte de su infancia, hasta su marcha a La Habana (Cuba)." },
+    { id: 27, lat: 40.4400033, lng: -3.696007,  name: "Calle Modesto Lafuente 36 — Abuelos Vila Fano / Patiño Hermida",  folder: "Madrid", type: "domicilio",  desc: "Casa de los abuelos José Vila Fano y Bernarda Patiño Hermida en Madrid." },
+    { id: 28, lat: 40.4499234, lng: -3.695395,  name: "Calle de Orense 17 — Segunda casa de la familia Vila Villar",     folder: "Madrid", type: "domicilio",  desc: "Segunda casa de la familia Vila Villar, en la que nacen Isabel, Pilar, Eduardo y Jacobo." },
+    { id: 29, lat: 40.444992,  lng: -3.702783,  name: "Calle Santa Engracia 150 — Casa familia Vila Villar",             folder: "Madrid", type: "domicilio",  desc: "Tercera casa de la familia Vila Villar. Aquí murió Bernarda Patiño Hermida el 9 de noviembre de 1985 y Eduardo Vila Patiño el 11 de noviembre de 2020." },
+    { id: 30, lat: 40.4485608, lng: -3.6973111, name: "Calle General Moscardó 18 (hoy Edgar Neville 15)",                folder: "Madrid", type: "domicilio",  desc: "Casa de Isabel Seco San Martín en Madrid. La calle cambió de nombre y numeración; actualmente es Edgar Neville, 15." },
+    { id: 31, lat: 40.4773536, lng: -3.8637438, name: "Calle del Cerro del Aire 29 (hoy nº 13), Majadahonda",            folder: "Madrid", type: "domicilio",  desc: "Casa de verano de la abuela Isabel Seco San Martín en Majadahonda, donde murió el 19 de octubre de 1985. En esta casa todos sus nietos disfrutamos nuestra infancia." },
+    { id: 32, lat: 40.5996522, lng: -3.9376123, name: "Calle Cuevas del Mar 6, La Berzosa (Hoyo de Manzanares)",         folder: "Madrid", type: "domicilio",  desc: "Casa de verano de la familia Vila Villar en la Urbanización La Berzosa. Aquí pasamos una buena parte de nuestra infancia. La casa se vendió en abril de 2021." },
+    { id: 33, lat: 40.4182197, lng: -3.7062974, name: "Iglesia Parroquial de San Martín — Bautizo de Eustaquio Peralta", folder: "Madrid", type: "iglesia",    desc: "Aquí bautizaron al tátara-tátara abuelo Eustaquio Peralta Sanz el 4 de noviembre de 1813. Estaba en la plaza de las Descalzas. Derruida a principios del s. XIX durante el reinado de José Bonaparte, la parroquia se trasladó a su actual ubicación en la calle Desengaño." },
+    { id: 34, lat: 40.4190999, lng: -3.6966382, name: "Iglesia Parroquial de San José — Bautizos Maroto y Seco",         folder: "Madrid", type: "iglesia",    desc: "Aquí bautizaron a la tátara-tátara abuela María Maroto Herrero el 13 de diciembre de 1820. También bautizaron aquí al bisabuelo Ricardo Seco de la Garza en septiembre de 1879." },
+    { id: 35, lat: 40.4198875, lng: -3.7016064, name: "Iglesia Parroquial de San Luis (ya no existe)",                   folder: "Madrid", type: "iglesia",    desc: "Aquí bautizaron a la tátara-abuela María Peralta Maroto el 3 de mayo de 1847 y a su hermano Ernesto el 6 de febrero de 1846. Fue incendiada el 13 de marzo de 1936 y demolida en 1943. Estaba en la parte alta de la calle Montera." },
+    { id: 36, lat: 40.4457837, lng: -3.6872238, name: "Iglesia Parroquial de San Agustín — Boda de nuestros padres",     folder: "Madrid", type: "iglesia",    desc: "Aquí contrajeron matrimonio los padres Eduardo Vila Patiño y Pilar Villar Seco el 22 de octubre de 1963." },
+    { id: 37, lat: 40.4415625, lng: -3.7097402, name: "Cementerio Sacramental de San Martín — María Maroto Herrero",    folder: "Madrid", type: "cementerio", desc: "Aquí enterraron a la tátara-tátara abuela María Maroto Herrero, fallecida el 12 de marzo de 1876. El cementerio se construyó en 1849 y fue clausurado a principios del s. XX. En su lugar se construyó el Estadio Vallehermoso." },
+    { id: 38, lat: 40.3666941, lng: -3.7262719, name: "Cementerio de Carabanchel Sur — Abuelos Vila Fano / Patiño",     folder: "Madrid", type: "cementerio", desc: "Aquí están enterrados los abuelos José Vila Fano y Bernarda Patiño Hermida. Zona Adultos, Sección 8E, fila 5, nicho 21." },
+    { id: 39, lat: 40.518593,  lng: -3.789346,  name: "Cementerio El Cristo del Pardo — Abuelos Villar Molina / Seco",  folder: "Madrid", type: "cementerio", desc: "Aquí están enterrados los abuelos Luis Villar Molina e Isabel Seco San Martín." },
+    { id: 40, lat: 40.505022,  lng: -3.886675,  name: "Cementerio Municipal Las Rozas — Eduardo Vila Patiño",           folder: "Madrid", type: "cementerio", desc: "Aquí está enterrado el padre Eduardo Vila Patiño. Columbario calle G, fila 2, número 17." },
+    // TUDELA
+    { id: 41, lat: 42.0598075, lng: -1.6065505, name: "Plaza de la Constitución — Casa natal de Juan Villar Anchorena", folder: "Tudela (Navarra)", type: "domicilio", desc: "Casa familiar de Marcos Villar Ladero y Avelina Anchorena Tellería. Aquí nació el tátara-abuelo Juan Villar Anchorena el 27 de mayo de 1841." },
+    // INTERNACIONAL
+    { id: 42, lat: 53.8120647, lng: 10.3723713, name: "Bad Oldesloe, Hamburgo — Estudios hijos de José Antonio de Vila", folder: "Internacional", type: "historico", desc: "Aquí estudiaron Fermín, Augusto José y Constantino de Vila y León entre 1828 y 1835. Fermín murió en esta ciudad en el invierno de 1829 con solo 16 años. Su tumba se conserva en el cementerio local." },
+    { id: 43, lat: 51.5362,    lng: -0.1033,    name: "Islington, Londres — Estudios de Fermín de Vila y León",         folder: "Internacional", type: "historico", desc: "Barrio de Londres donde estudió Fermín de Vila y León, probablemente entre 1827 y 1828. Aquí escribió las cartas a su padre que se conservan entre los documentos de la familia." },
+    { id: 44, lat: 50.7942,    lng: -3.6506,    name: "Crediton, Devon — Estudios de Augusto José de Vila",             folder: "Internacional", type: "historico", desc: "Localidad a 250 km de Londres donde estudió Augusto José de Vila y León durante su etapa formativa en el extranjero." },
+    { id: 45, lat: 48.874927,  lng: 2.2891324,  name: "Rue Chalgrin 16, París — Muerte de Augusto José de Vila (1874)", folder: "Internacional", type: "historico", desc: "Aquí murió el tátara-abuelo Augusto José de Vila y León el 28 de julio de 1874, a los 55 años." },
+    { id: 46, lat: 6.9082783,  lng: 122.0757384,name: "Zamboanga, Filipinas — Muerte de Juan Villar Anchorena (1874)",  folder: "Internacional", type: "historico", desc: "Ciudad de la isla de Mindanao donde murió el tátara-abuelo Juan Villar Anchorena el 2 de abril de 1874, durante su destino militar en Filipinas." },
+  ];
+
+  const typeColors = {
+    domicilio:  "#1a3a6b",
+    iglesia:    "#8b7520",
+    cementerio: "#2a5c3f",
+    historico:  "#8b2020"
+  };
+
+  function makeIcon(type) {
+    const color = typeColors[type] || "#333";
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="34" viewBox="0 0 24 34">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 22 12 22s12-13 12-22C24 5.37 18.63 0 12 0z" fill="${color}"/>
+      <circle cx="12" cy="12" r="5" fill="white" opacity="0.9"/>
+    </svg>`;
+    return L.divIcon({
+      html: svg,
+      className: '',
+      iconSize: [24, 34],
+      iconAnchor: [12, 34],
+      popupAnchor: [0, -36]
+    });
+  }
+
+  // ── MAP INIT ──────────────────────────────────────────────────────────────
+  let map = null;
+  let markers = {};
+  let mapInitialized = false;
+
+  function toggleMap() {
+    const section = document.getElementById('map-section');
+    section.classList.toggle('map-open');
+    if (section.classList.contains('map-open') && !mapInitialized) {
+      initMap();
+    }
+  }
+
+  function initMap() {
+    map = L.map('map', { zoomControl: true }).setView([41.5, -4.5], 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      maxZoom: 19
+    }).addTo(map);
+
+    places.forEach(p => {
+      const marker = L.marker([p.lat, p.lng], { icon: makeIcon(p.type) }).addTo(map);
+      const popup = L.popup({ maxWidth: 320, minWidth: 240 }).setContent(
+        `<div class="popup-folder">${p.folder}</div>
+         <div class="popup-name">${p.name}</div>
+         <div class="popup-desc">${p.desc}</div>`
+      );
+      marker.bindPopup(popup);
+      markers[p.id] = marker;
+    });
+
+    mapInitialized = true;
+  }
+
+  // ── SYNC MAP → CARD ───────────────────────────────────────────────────────
+  function goToCard(id) {
+    // Find the card by matching the place name
+    const placeName = places[id].name;
+    const allCards = document.querySelectorAll('.place-card');
+    let targetCard = null;
+
+    allCards.forEach(card => {
+      const cardName = card.querySelector('.place-name').textContent.trim();
+      if (placeName.includes(cardName.substring(0, 30)) || cardName.includes(placeName.substring(0, 30))) {
+        targetCard = card;
+      }
+    });
+
+    if (!targetCard) return;
+
+    // Close any open popup on map
+    if (map) map.closePopup();
+
+    // Remove previous highlights
+    document.querySelectorAll('.place-card.map-highlight').forEach(c => c.classList.remove('map-highlight'));
+
+    // Open the card and highlight it
+    targetCard.classList.add('open');
+    targetCard.classList.add('map-highlight');
+
+    // Scroll smoothly to the card
+    setTimeout(() => {
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => targetCard.classList.remove('map-highlight'), 2500);
+    }, 100);
+  }
+
+  // ── EXISTING FUNCTIONS (keep) ─────────────────────────────────────────────
+
+  let activeType = 'all';
+
+  function toggleCard(card) {
+    card.classList.toggle('open');
+  }
+
+  function filterType(type, btn) {
+    activeType = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+  }
+
+  function filterSearch() {
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const cards = document.querySelectorAll('.place-card');
+    let anyVisible = false;
+
+    cards.forEach(card => {
+      const matchType = activeType === 'all' || card.classList.contains('type-' + activeType);
+      const text = (card.dataset.text || '') + ' ' + card.querySelector('.place-name').textContent.toLowerCase();
+      const matchSearch = query === '' || text.toLowerCase().includes(query);
+      if (matchType && matchSearch) {
+        card.classList.remove('hidden');
+        anyVisible = true;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+
+    // Show/hide folders based on visible cards
+    document.querySelectorAll('.folder').forEach(folder => {
+      const visibleCards = folder.querySelectorAll('.place-card:not(.hidden)');
+      folder.style.display = visibleCards.length > 0 ? '' : 'none';
+    });
+
+    document.getElementById('emptyState').style.display = anyVisible ? 'none' : 'block';
+  }
+</script>
+</body>
+</html>
