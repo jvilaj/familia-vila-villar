@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Familia Vila Villar — Lugares de interés</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -347,33 +345,103 @@
     }
 
     /* MAP */
-    .map-section {
+    #map-section {
       background: var(--cream-dark);
-      border-bottom: 2px solid rgba(0,0,0,0.08);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
     }
 
-    .map-section-title {
-      text-align: center;
+    #map-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.5rem;
+      cursor: pointer;
+      user-select: none;
+      background: var(--cream-dark);
+    }
+
+    #map-section-header:hover { background: #e5dfd5; }
+
+    .map-toggle-label {
       font-family: 'Cinzel', serif;
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--navy);
+    }
+
+    .map-toggle-arrow {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      transition: transform 0.25s;
+    }
+
+    #map-section.map-open .map-toggle-arrow { transform: rotate(180deg); }
+
+    #map-container {
+      display: none;
+      height: 420px;
+    }
+
+    #map-section.map-open #map-container { display: block; }
+
+    #map { height: 100%; width: 100%; }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 0 !important;
+      border-left: 3px solid var(--navy);
+      font-family: 'EB Garamond', Georgia, serif;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+    }
+
+    .leaflet-popup-content {
+      margin: 0.75rem 1rem !important;
+    }
+
+    .popup-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+      margin-bottom: 0.3rem;
+    }
+
+    .popup-folder {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-light);
-      padding: 0.75rem 1rem 0.5rem;
+      margin-bottom: 0.5rem;
     }
 
-    #map {
-      height: 420px;
-      width: 100%;
+    .popup-goto {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--navy);
+      cursor: pointer;
+      border-bottom: 1px solid var(--gold);
+      padding-bottom: 1px;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    .popup-goto:hover { color: var(--gold); }
+
+    /* highlight active card */
+    .place-card.map-highlight {
+      background: #fffbf0;
+      box-shadow: 0 0 0 2px var(--gold);
     }
 
     @media (max-width: 600px) {
-      #map { height: 280px; }
-    }
-
-    .place-card.highlighted {
-      box-shadow: 0 0 0 2px var(--gold), 0 4px 16px rgba(0,0,0,0.15);
-      transform: translateX(3px);
+      #map-container { height: 300px; }
     }
 
   </style>
@@ -394,11 +462,6 @@
   <div class="legend-item"><div class="legend-dot" style="background:#8b2020"></div>Lugar histórico</div>
 </div>
 
-<div class="map-section">
-  <div class="map-section-title">Mapa de lugares</div>
-  <div id="map"></div>
-</div>
-
 <div class="search-wrap">
   <input class="search-input" type="text" placeholder="Buscar lugar o persona…" id="searchInput" oninput="filterSearch()">
 </div>
@@ -409,6 +472,17 @@
   <button class="filter-btn" onclick="filterType('iglesia', this)">Iglesias</button>
   <button class="filter-btn" onclick="filterType('cementerio', this)">Cementerios</button>
   <button class="filter-btn" onclick="filterType('historico', this)">Históricos</button>
+</div>
+
+
+<div id="map-section">
+  <div id="map-section-header" onclick="toggleMap()">
+    <span class="map-toggle-label">🗺  Mapa interactivo</span>
+    <span class="map-toggle-arrow">▾</span>
+  </div>
+  <div id="map-container">
+    <div id="map"></div>
+  </div>
 </div>
 
 <div class="content" id="content">
@@ -1057,140 +1131,161 @@
   Familia Vila Villar &mdash; Extracto Histórico y Reconstrucción del Árbol Genealógico &mdash; 3ª Edición, 2026
 </footer>
 
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-
-  // ── PLACE DATA ──────────────────────────────────────────────────────────
+  // ── MAP DATA ──────────────────────────────────────────────────────────────
   const places = [
-    { id: 0,  lat: 43.3693977, lng: -8.4028387, type: 'domicilio',  name: 'Rúa Nueva 15 — Casa de José Antonio de Vila' },
-    { id: 1,  lat: 43.371372,  lng: -8.3953604, type: 'domicilio',  name: 'Plaza de María Pita 1 y 2 — Casa de Augusto José de Vila' },
-    { id: 2,  lat: 43.3677889, lng: -8.409419,  type: 'domicilio',  name: 'Avenida de Rubine 15 — Casa de Jacoba Vila Fano y Manuel de Vierna' },
-    { id: 3,  lat: 43.3696825, lng: -8.4001016, type: 'domicilio',  name: 'Avenida de la Marina 22 — Casa de Eduardo Vila Algorri' },
-    { id: 4,  lat: 43.3704826, lng: -8.3991448, type: 'domicilio',  name: 'Calle Real 2 — Casa de Justo Pastor de Fano' },
-    { id: 5,  lat: 43.3708119, lng: -8.3994792, type: 'domicilio',  name: 'Calle de la Galera 3 — Casa de Justo Pastor de Fano' },
-    { id: 6,  lat: 43.3587557, lng: -8.4058364, type: 'domicilio',  name: 'Calle de la Falperra 4 — Casa de Justo Pastor de Fano' },
-    { id: 7,  lat: 43.3705754, lng: -8.3973166, type: 'domicilio',  name: 'Calle Riego del Agua 13 y 15' },
-    { id: 8,  lat: 43.3675372, lng: -8.4108311, type: 'domicilio',  name: 'Calle del Comandante Barja 6 (hoy Riazor) — Casa de verano' },
-    { id: 9,  lat: 43.3689285, lng: -8.39854,   type: 'domicilio',  name: 'Monolito D. Eduardo Vila y Algorri — Puerto de La Coruña' },
-    { id: 10, lat: 43.3225693, lng: -8.3834441, type: 'domicilio',  name: 'Pazo de Vilaboa (Rutis) — Casa de verano familia Villar Seco' },
-    { id: 11, lat: 43.3716814, lng: -8.3969317, type: 'iglesia',    name: 'Iglesia de San Jorge — Bautizos familia Vila y León' },
-    { id: 12, lat: 43.371377,  lng: -8.398451,  type: 'iglesia',    name: 'Iglesia de San Nicolás — Bautizos y funerales familia Vila' },
-    { id: 13, lat: 43.3696086, lng: -8.3941265, type: 'iglesia',    name: 'Parroquia de Santiago — La más antigua de la ciudad' },
-    { id: 14, lat: 43.37767,   lng: -8.396739,  type: 'cementerio', name: 'Cementerio Municipal San Amaro — Nichos familia Vila' },
-    { id: 15, lat: 43.365744,  lng: -8.387782,  type: 'historico',  name: 'Castillo de San Antón — Prisión de José Antonio de Vila (1831)' },
-    { id: 16, lat: 43.4773011, lng: -8.2601288, type: 'historico',  name: 'Astillero del Reverbero — La Graña, Ferrol' },
-    { id: 17, lat: 43.4858034, lng: -8.258717,  type: 'historico',  name: 'Dique de la Cabaña' },
-    { id: 18, lat: 43.4821243, lng: -8.2350786, type: 'iglesia',    name: 'Iglesia de San Julián — Ferrol, bautizo de Fermín de Vila y León' },
-    { id: 19, lat: 43.4792014, lng: -8.2625169, type: 'iglesia',    name: 'Parroquia de San Andrés de La Graña' },
-    { id: 20, lat: 43.4828958, lng: -8.2311031, type: 'historico',  name: 'Museo de la Construcción Naval — Ferrol' },
-    { id: 21, lat: 43.323779,  lng: -8.808161,  type: 'historico',  name: 'Puerto de Malpica — Obra de Eduardo Vila Fano' },
-    { id: 22, lat: 40.4202633, lng: -3.7077675, type: 'domicilio',  name: 'Calle Jacometrezo 18 — Casa natal de Eustaquio Peralta Sanz' },
-    { id: 23, lat: 40.4220314, lng: -3.7108397, type: 'domicilio',  name: 'Calle de Fomento 34 — Primera casa de Eustaquio Peralta Sanz' },
-    { id: 24, lat: 40.4243625, lng: -3.712057,  type: 'domicilio',  name: 'Calle de Leganitos 59 — Segunda casa de Eustaquio Peralta Sanz' },
-    { id: 25, lat: 40.4220491, lng: -3.7021137, type: 'domicilio',  name: 'Calle de la Puebla 4 — Tercera casa de Eustaquio Peralta Sanz' },
-    { id: 26, lat: 40.4226642, lng: -3.6893706, type: 'domicilio',  name: 'Calle de Villanueva 6 — Casa de Ricardo Seco y Vittini' },
-    { id: 27, lat: 40.4400033, lng: -3.696007,  type: 'domicilio',  name: 'Calle Modesto Lafuente 36 — Casa de los abuelos Vila Fano / Patiño Hermida' },
-    { id: 28, lat: 40.4499234, lng: -3.695395,  type: 'domicilio',  name: 'Calle de Orense 17 — Segunda casa de la familia Vila Villar' },
-    { id: 29, lat: 40.444992,  lng: -3.702783,  type: 'domicilio',  name: 'Calle Santa Engracia 150 — Casa familia Vila Villar' },
-    { id: 30, lat: 40.4485608, lng: -3.6973111, type: 'domicilio',  name: 'Calle General Moscardó 18 (hoy Edgar Neville 15) — Casa de Isabel Seco San Martín' },
-    { id: 31, lat: 40.4773536, lng: -3.8637438, type: 'domicilio',  name: 'Calle del Cerro del Aire 29 (hoy nº 13), Majadahonda — Casa de verano abuela Isabel' },
-    { id: 32, lat: 40.5996522, lng: -3.9376123, type: 'domicilio',  name: 'Calle Cuevas del Mar 6, La Berzosa — Casa de verano Vila Villar' },
-    { id: 33, lat: 40.4182197, lng: -3.7062974, type: 'iglesia',    name: 'Iglesia Parroquial de San Martín — Bautizo de Eustaquio Peralta Sanz' },
-    { id: 34, lat: 40.4190999, lng: -3.6966382, type: 'iglesia',    name: 'Iglesia Parroquial de San José — Bautizos Maroto y Seco' },
-    { id: 35, lat: 40.4198875, lng: -3.7016064, type: 'iglesia',    name: 'Iglesia Parroquial de San Luis — Bautizos Peralta Maroto (ya no existe)' },
-    { id: 36, lat: 40.4457837, lng: -3.6872238, type: 'iglesia',    name: 'Iglesia Parroquial de San Agustín — Boda de nuestros padres' },
-    { id: 37, lat: 40.4415625, lng: -3.7097402, type: 'cementerio', name: 'Cementerio Sacramental de San Martín — María Maroto Herrero' },
-    { id: 38, lat: 40.3666941, lng: -3.7262719, type: 'cementerio', name: 'Cementerio de Carabanchel Sur — Abuelos José Vila Fano y Bernarda Patiño' },
-    { id: 39, lat: 40.518593,  lng: -3.789346,  type: 'cementerio', name: 'Cementerio El Cristo del Pardo — Abuelos Luis Villar Molina e Isabel Seco' },
-    { id: 40, lat: 40.505022,  lng: -3.886675,  type: 'cementerio', name: 'Cementerio Municipal Las Rozas — Eduardo Vila Patiño' },
-    { id: 41, lat: 42.0598075, lng: -1.6065505, type: 'domicilio',  name: 'Plaza de la Constitución — Casa natal de Juan Villar Anchorena' },
-    { id: 42, lat: 53.8120647, lng: 10.3723713, type: 'historico',  name: 'Bad Oldesloe, Hamburgo — Estudios de los hijos de José Antonio de Vila' },
-    { id: 43, lat: 51.5362,    lng: -0.1033,    type: 'historico',  name: 'Islington, Londres — Estudios de Fermín de Vila y León' },
-    { id: 44, lat: 50.7942,    lng: -3.6506,    type: 'historico',  name: 'Crediton, Devon (Reino Unido) — Estudios de Augusto José de Vila' },
-    { id: 45, lat: 48.874927,  lng: 2.2891324,  type: 'historico',  name: 'Rue Chalgrin 16, París — Muerte de Augusto José de Vila (1874)' },
-    { id: 46, lat: 6.9082783,  lng: 122.0757384,type: 'historico',  name: 'Zamboanga, Filipinas — Muerte de Juan Villar Anchorena (1874)' },
+    // LA CORUÑA
+    { id: 0,  lat: 43.3693977, lng: -8.4028387, name: "Rúa Nueva 15 — Casa de José Antonio de Vila",                          folder: "La Coruña", type: "domicilio" },
+    { id: 1,  lat: 43.371372,  lng: -8.3953604, name: "Plaza de María Pita 1 y 2 — Casa de Augusto José de Vila",             folder: "La Coruña", type: "domicilio" },
+    { id: 2,  lat: 43.3677889, lng: -8.409419,  name: "Avenida de Rubine 15 — Casa de Jacoba Vila Fano y Manuel de Vierna",   folder: "La Coruña", type: "domicilio" },
+    { id: 3,  lat: 43.3696825, lng: -8.4001016, name: "Avenida de la Marina 22 — Casa de Eduardo Vila Algorri",               folder: "La Coruña", type: "domicilio" },
+    { id: 4,  lat: 43.3704826, lng: -8.3991448, name: "Calle Real 2 — Casa de Justo Pastor de Fano",                         folder: "La Coruña", type: "domicilio" },
+    { id: 5,  lat: 43.3708119, lng: -8.3994792, name: "Calle de la Galera 3 — Casa de Justo Pastor de Fano",                 folder: "La Coruña", type: "domicilio" },
+    { id: 6,  lat: 43.3587557, lng: -8.4058364, name: "Calle de la Falperra 4 — Casa de Justo Pastor de Fano",               folder: "La Coruña", type: "domicilio" },
+    { id: 7,  lat: 43.3705754, lng: -8.3973166, name: "Calle Riego del Agua 13 y 15",                                        folder: "La Coruña", type: "domicilio" },
+    { id: 8,  lat: 43.3675372, lng: -8.4108311, name: "Calle del Comandante Barja 6 (hoy Riazor) — Casa de verano",          folder: "La Coruña", type: "domicilio" },
+    { id: 9,  lat: 43.3689285, lng: -8.39854,   name: "Monolito D. Eduardo Vila y Algorri — Puerto de La Coruña",            folder: "La Coruña", type: "domicilio" },
+    { id: 10, lat: 43.3225693, lng: -8.3834441, name: "Pazo de Vilaboa (Rutis) — Casa de verano familia Villar Seco",        folder: "La Coruña", type: "domicilio" },
+    { id: 11, lat: 43.3716814, lng: -8.3969317, name: "Iglesia de San Jorge — Bautizos familia Vila y León",                 folder: "La Coruña", type: "iglesia"   },
+    { id: 12, lat: 43.371377,  lng: -8.398451,  name: "Iglesia de San Nicolás — Bautizos y funerales familia Vila",          folder: "La Coruña", type: "iglesia"   },
+    { id: 13, lat: 43.3696086, lng: -8.3941265, name: "Parroquia de Santiago — La más antigua de la ciudad",                 folder: "La Coruña", type: "iglesia"   },
+    { id: 14, lat: 43.37767,   lng: -8.396739,  name: "Cementerio Municipal San Amaro — Nichos familia Vila",                folder: "La Coruña", type: "cementerio"},
+    { id: 15, lat: 43.365744,  lng: -8.387782,  name: "Castillo de San Antón — Prisión de José Antonio de Vila (1831)",      folder: "La Coruña", type: "historico" },
+    // FERROL
+    { id: 16, lat: 43.4773011, lng: -8.2601288, name: "Astillero del Reverbero — La Graña, Ferrol",                         folder: "Ferrol y La Graña", type: "historico" },
+    { id: 17, lat: 43.4858034, lng: -8.258717,  name: "Dique de la Cabaña",                                                 folder: "Ferrol y La Graña", type: "historico" },
+    { id: 18, lat: 43.4821243, lng: -8.2350786, name: "Iglesia de San Julián — Ferrol",                                     folder: "Ferrol y La Graña", type: "iglesia"   },
+    { id: 19, lat: 43.4792014, lng: -8.2625169, name: "Parroquia de San Andrés de La Graña",                                folder: "Ferrol y La Graña", type: "iglesia"   },
+    { id: 20, lat: 43.4828958, lng: -8.2311031, name: "Museo de la Construcción Naval — Ferrol",                            folder: "Ferrol y La Graña", type: "historico" },
+    // MALPICA
+    { id: 21, lat: 43.323779,  lng: -8.808161,  name: "Puerto de Malpica — Obra de Eduardo Vila Fano",                     folder: "Malpica de Bergantiños", type: "historico" },
+    // MADRID
+    { id: 22, lat: 40.4202633, lng: -3.7077675, name: "Calle Jacometrezo 18 — Casa natal de Eustaquio Peralta Sanz",       folder: "Madrid", type: "domicilio" },
+    { id: 23, lat: 40.4220314, lng: -3.7108397, name: "Calle de Fomento 34 — Primera casa de Eustaquio Peralta Sanz",      folder: "Madrid", type: "domicilio" },
+    { id: 24, lat: 40.4243625, lng: -3.712057,  name: "Calle de Leganitos 59 — Segunda casa de Eustaquio Peralta Sanz",    folder: "Madrid", type: "domicilio" },
+    { id: 25, lat: 40.4220491, lng: -3.7021137, name: "Calle de la Puebla 4 — Tercera casa de Eustaquio Peralta Sanz",     folder: "Madrid", type: "domicilio" },
+    { id: 26, lat: 40.4226642, lng: -3.6893706, name: "Calle de Villanueva 6 — Casa de Ricardo Seco y Vittini",            folder: "Madrid", type: "domicilio" },
+    { id: 27, lat: 40.4400033, lng: -3.696007,  name: "Calle Modesto Lafuente 36 — Abuelos Vila Fano / Patiño Hermida",    folder: "Madrid", type: "domicilio" },
+    { id: 28, lat: 40.4499234, lng: -3.695395,  name: "Calle de Orense 17 — Segunda casa de la familia Vila Villar",       folder: "Madrid", type: "domicilio" },
+    { id: 29, lat: 40.444992,  lng: -3.702783,  name: "Calle Santa Engracia 150 — Casa familia Vila Villar",               folder: "Madrid", type: "domicilio" },
+    { id: 30, lat: 40.4485608, lng: -3.6973111, name: "Calle General Moscardó 18 (hoy Edgar Neville 15)",                  folder: "Madrid", type: "domicilio" },
+    { id: 31, lat: 40.4773536, lng: -3.8637438, name: "Calle del Cerro del Aire 29 (hoy nº 13), Majadahonda",              folder: "Madrid", type: "domicilio" },
+    { id: 32, lat: 40.5996522, lng: -3.9376123, name: "Calle Cuevas del Mar 6, La Berzosa (Hoyo de Manzanares)",           folder: "Madrid", type: "domicilio" },
+    { id: 33, lat: 40.4182197, lng: -3.7062974, name: "Iglesia Parroquial de San Martín — Bautizo de Eustaquio Peralta",   folder: "Madrid", type: "iglesia"   },
+    { id: 34, lat: 40.4190999, lng: -3.6966382, name: "Iglesia Parroquial de San José — Bautizos Maroto y Seco",           folder: "Madrid", type: "iglesia"   },
+    { id: 35, lat: 40.4198875, lng: -3.7016064, name: "Iglesia Parroquial de San Luis (ya no existe)",                     folder: "Madrid", type: "iglesia"   },
+    { id: 36, lat: 40.4457837, lng: -3.6872238, name: "Iglesia Parroquial de San Agustín — Boda de nuestros padres",       folder: "Madrid", type: "iglesia"   },
+    { id: 37, lat: 40.4415625, lng: -3.7097402, name: "Cementerio Sacramental de San Martín — María Maroto Herrero",       folder: "Madrid", type: "cementerio"},
+    { id: 38, lat: 40.3666941, lng: -3.7262719, name: "Cementerio de Carabanchel Sur — Abuelos Vila Fano / Patiño",        folder: "Madrid", type: "cementerio"},
+    { id: 39, lat: 40.518593,  lng: -3.789346,  name: "Cementerio El Cristo del Pardo — Abuelos Villar Molina / Seco",     folder: "Madrid", type: "cementerio"},
+    { id: 40, lat: 40.505022,  lng: -3.886675,  name: "Cementerio Municipal Las Rozas — Eduardo Vila Patiño",              folder: "Madrid", type: "cementerio"},
+    // TUDELA
+    { id: 41, lat: 42.0598075, lng: -1.6065505, name: "Plaza de la Constitución — Tudela, casa natal Juan Villar Anchorena", folder: "Tudela (Navarra)", type: "domicilio" },
+    // INTERNACIONAL
+    { id: 42, lat: 53.8120647, lng: 10.3723713, name: "Bad Oldesloe, Hamburgo — Estudios hijos de José Antonio de Vila",   folder: "Internacional", type: "historico" },
+    { id: 43, lat: 51.5362,    lng: -0.1033,    name: "Islington, Londres — Estudios de Fermín de Vila y León",            folder: "Internacional", type: "historico" },
+    { id: 44, lat: 50.7942,    lng: -3.6506,    name: "Crediton, Devon — Estudios de Augusto José de Vila",                folder: "Internacional", type: "historico" },
+    { id: 45, lat: 48.874927,  lng: 2.2891324,  name: "Rue Chalgrin 16, París — Muerte de Augusto José de Vila (1874)",    folder: "Internacional", type: "historico" },
+    { id: 46, lat: 6.9082783,  lng: 122.0757384,name: "Zamboanga, Filipinas — Muerte de Juan Villar Anchorena (1874)",     folder: "Internacional", type: "historico" },
   ];
 
-  // ── COLOURS ─────────────────────────────────────────────────────────────
   const typeColors = {
-    domicilio:  '#1a3a6b',
-    iglesia:    '#8b7520',
-    cementerio: '#2a5c3f',
-    historico:  '#8b2020',
+    domicilio:  "#1a3a6b",
+    iglesia:    "#8b7520",
+    cementerio: "#2a5c3f",
+    historico:  "#8b2020"
   };
 
   function makeIcon(type) {
-    const color = typeColors[type] || '#333';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
-      <path d="M14 0C6.268 0 0 6.268 0 14c0 9.333 14 22 14 22S28 23.333 28 14C28 6.268 21.732 0 14 0z" fill="${color}"/>
-      <circle cx="14" cy="14" r="6" fill="white" opacity="0.9"/>
+    const color = typeColors[type] || "#333";
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="34" viewBox="0 0 24 34">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 22 12 22s12-13 12-22C24 5.37 18.63 0 12 0z" fill="${color}"/>
+      <circle cx="12" cy="12" r="5" fill="white" opacity="0.9"/>
     </svg>`;
     return L.divIcon({
       html: svg,
-      iconSize: [28, 36],
-      iconAnchor: [14, 36],
-      popupAnchor: [0, -36],
-      className: ''
+      className: '',
+      iconSize: [24, 34],
+      iconAnchor: [12, 34],
+      popupAnchor: [0, -36]
     });
   }
 
-  // ── MAP INIT ─────────────────────────────────────────────────────────────
-  const map = L.map('map', { zoomControl: true }).setView([40.4, -3.7], 6);
+  // ── MAP INIT ──────────────────────────────────────────────────────────────
+  let map = null;
+  let markers = {};
+  let mapInitialized = false;
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap contributors © CARTO',
-    maxZoom: 19
-  }).addTo(map);
+  function toggleMap() {
+    const section = document.getElementById('map-section');
+    section.classList.toggle('map-open');
+    if (section.classList.contains('map-open') && !mapInitialized) {
+      initMap();
+    }
+  }
 
-  // ── MARKERS ──────────────────────────────────────────────────────────────
-  const markers = {};
-  const cards = document.querySelectorAll('.place-card');
+  function initMap() {
+    map = L.map('map', { zoomControl: true }).setView([41.5, -4.5], 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      maxZoom: 19
+    }).addTo(map);
 
-  places.forEach((place, idx) => {
-    const marker = L.marker([place.lat, place.lng], { icon: makeIcon(place.type) })
-      .addTo(map)
-      .bindPopup(`<strong style="font-family:sans-serif;font-size:13px">${place.name}</strong>`, { maxWidth: 220 });
-
-    marker.on('click', () => {
-      // Find matching card by name
-      const card = [...cards].find(c =>
-        c.querySelector('.place-name').textContent.trim() === place.name
+    places.forEach(p => {
+      const marker = L.marker([p.lat, p.lng], { icon: makeIcon(p.type) }).addTo(map);
+      const popup = L.popup({ maxWidth: 260, minWidth: 200 }).setContent(
+        `<div class="popup-folder">${p.folder}</div>
+         <div class="popup-name">${p.name}</div>
+         <button class="popup-goto" onclick="goToCard(${p.id})">Ver detalle ↓</button>`
       );
-      if (card) {
-        // Open card
-        if (!card.classList.contains('open')) card.classList.add('open');
-        // Highlight briefly
-        cards.forEach(c => c.classList.remove('highlighted'));
-        card.classList.add('highlighted');
-        setTimeout(() => card.classList.remove('highlighted'), 2000);
-        // Show folder if hidden
-        const folder = card.closest('.folder');
-        if (folder) folder.style.display = '';
-        // Scroll to card
-        setTimeout(() => {
-          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
+      marker.bindPopup(popup);
+      markers[p.id] = marker;
+    });
+
+    mapInitialized = true;
+  }
+
+  // ── SYNC MAP → CARD ───────────────────────────────────────────────────────
+  function goToCard(id) {
+    // Find the card by matching the place name
+    const placeName = places[id].name;
+    const allCards = document.querySelectorAll('.place-card');
+    let targetCard = null;
+
+    allCards.forEach(card => {
+      const cardName = card.querySelector('.place-name').textContent.trim();
+      if (placeName.includes(cardName.substring(0, 30)) || cardName.includes(placeName.substring(0, 30))) {
+        targetCard = card;
       }
     });
 
-    markers[place.name] = marker;
-  });
+    if (!targetCard) return;
 
-  // ── FIT SPAIN + EUROPE on load ───────────────────────────────────────────
-  map.fitBounds([[36, -10], [54, 14]]);
+    // Close any open popup on map
+    if (map) map.closePopup();
 
-  // ── EXISTING FILTER LOGIC ────────────────────────────────────────────────
+    // Remove previous highlights
+    document.querySelectorAll('.place-card.map-highlight').forEach(c => c.classList.remove('map-highlight'));
+
+    // Open the card and highlight it
+    targetCard.classList.add('open');
+    targetCard.classList.add('map-highlight');
+
+    // Scroll smoothly to the card
+    setTimeout(() => {
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => targetCard.classList.remove('map-highlight'), 2500);
+    }, 100);
+  }
+
+  // ── EXISTING FUNCTIONS (keep) ─────────────────────────────────────────────
+
   let activeType = 'all';
 
   function toggleCard(card) {
     card.classList.toggle('open');
-    // Pan map to marker
-    const name = card.querySelector('.place-name').textContent.trim();
-    const marker = markers[name];
-    if (marker && card.classList.contains('open')) {
-      map.setView(marker.getLatLng(), Math.max(map.getZoom(), 13), { animate: true });
-      marker.openPopup();
-    }
   }
 
   function filterType(type, btn) {
@@ -1206,10 +1301,10 @@
 
   function applyFilters() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    const allCards = document.querySelectorAll('.place-card');
+    const cards = document.querySelectorAll('.place-card');
     let anyVisible = false;
 
-    allCards.forEach(card => {
+    cards.forEach(card => {
       const matchType = activeType === 'all' || card.classList.contains('type-' + activeType);
       const text = (card.dataset.text || '') + ' ' + card.querySelector('.place-name').textContent.toLowerCase();
       const matchSearch = query === '' || text.toLowerCase().includes(query);
@@ -1221,18 +1316,7 @@
       }
     });
 
-    // Show/hide markers on map based on type filter
-    places.forEach(place => {
-      const marker = markers[place.name];
-      if (!marker) return;
-      const matchType = activeType === 'all' || place.type === activeType;
-      if (matchType) {
-        if (!map.hasLayer(marker)) map.addLayer(marker);
-      } else {
-        if (map.hasLayer(marker)) map.removeLayer(marker);
-      }
-    });
-
+    // Show/hide folders based on visible cards
     document.querySelectorAll('.folder').forEach(folder => {
       const visibleCards = folder.querySelectorAll('.place-card:not(.hidden)');
       folder.style.display = visibleCards.length > 0 ? '' : 'none';
