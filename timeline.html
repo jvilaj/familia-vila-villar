@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Familia Vila Villar — Línea de Tiempo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:        #1a2744;
+      --gold:        #c9a84c;
+      --cream:       #f8f4ed;
+      --cream-dark:  #ede8df;
+      --text:        #2c2416;
+      --text-light:  #6b5d4a;
+      --family-col:  #1a3a6b;
+      --history-col: #7a2020;
+      --family-bg:   #e8eef6;
+      --history-bg:  #f6e8e8;
+      --line-color:  #c9a84c;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'EB Garamond', Georgia, serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      padding: 1.2rem 2rem 1rem;
+      text-align: center;
+    }
+
+    .header-ornament {
+      color: var(--gold);
+      font-size: 0.65rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      font-family: 'Cinzel', serif;
+      opacity: 0.7;
+      margin-bottom: 0.3rem;
+    }
+
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.1rem, 4vw, 1.8rem);
+      font-weight: 600;
+      color: var(--cream);
+      letter-spacing: 0.08em;
+    }
+
+    header h1 span { color: var(--gold); }
+
+    .header-subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: rgba(248,244,237,0.6);
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    /* ── NAV BACK ── */
+    .nav-back {
+      background: var(--navy);
+      border-top: 1px solid rgba(201,168,76,0.2);
+      padding: 0.5rem 1.5rem;
+    }
+
+    .nav-back a {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(248,244,237,0.5);
+      text-decoration: none;
+    }
+
+    .nav-back a:hover { color: var(--gold); }
+
+    /* ── LEGEND BAR ── */
+    .legend-bar {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      align-items: center;
+      padding: 0.8rem 1.5rem;
+      background: var(--cream-dark);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── TIMELINE WRAPPER ── */
+    .timeline-wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+    }
+
+    /* ── ERA LABELS ── */
+    .era-block {
+      margin-bottom: 0.5rem;
+      margin-top: 2rem;
+    }
+
+    .era-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.8;
+      border-bottom: 1px solid rgba(201,168,76,0.25);
+      padding-bottom: 0.3rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── GENERATION LABEL ── */
+    .generation-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--family-col);
+      opacity: 0.6;
+      margin: 1.5rem 0 0.5rem 0;
+      padding-left: calc(50% + 1rem);
+    }
+
+    /* ── TWO-COLUMN ROW ── */
+    .tl-row {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr;
+      align-items: start;
+      margin-bottom: 0.6rem;
+      position: relative;
+    }
+
+    /* Centre spine */
+    .tl-spine {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 0.55rem;
+    }
+
+    .tl-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      border: 2px solid white;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+      position: relative;
+      z-index: 2;
+    }
+
+    .tl-spine-line {
+      width: 2px;
+      flex: 1;
+      min-height: 8px;
+      background: linear-gradient(to bottom, var(--line-color), rgba(201,168,76,0.2));
+    }
+
+    /* ── CARDS ── */
+    .tl-card {
+      padding: 0.65rem 0.9rem;
+      border-radius: 0;
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.15s;
+      position: relative;
+    }
+
+    .tl-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    }
+
+    .tl-card.family {
+      background: white;
+      border-left: 3px solid var(--family-col);
+      margin-right: 0.5rem;
+      text-align: right;
+    }
+
+    .tl-card.history {
+      background: white;
+      border-right: 3px solid var(--history-col);
+      margin-left: 0.5rem;
+      text-align: left;
+    }
+
+    .tl-card.empty { visibility: hidden; }
+
+    .tl-year {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 0.15rem;
+    }
+
+    .tl-card.family .tl-year { color: var(--family-col); }
+    .tl-card.history .tl-year { color: var(--history-col); }
+
+    .tl-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.25;
+      color: var(--text);
+    }
+
+    .tl-subtitle {
+      font-family: 'EB Garamond', serif;
+      font-size: 0.82rem;
+      font-style: italic;
+      color: var(--text-light);
+      margin-top: 0.15rem;
+      line-height: 1.35;
+    }
+
+    /* Expanded detail */
+    .tl-detail {
+      display: none;
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--cream-dark);
+      font-size: 0.88rem;
+      line-height: 1.65;
+      color: var(--text-light);
+      font-style: italic;
+      text-align: left;
+    }
+
+    .tl-card.open .tl-detail { display: block; }
+
+    /* Dot colors */
+    .dot-family    { background: var(--family-col); }
+    .dot-historia  { background: var(--history-col); }
+    .dot-nacimiento{ background: #2a5c3f; }
+    .dot-boda      { background: var(--gold); }
+    .dot-muerte    { background: #444; }
+
+    /* ── YEAR RULER ── */
+    .year-ruler {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr;
+      margin-bottom: 0.2rem;
+    }
+
+    .year-ruler-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      text-align: center;
+      padding: 0.2rem 0;
+      background: var(--navy);
+      opacity: 0.85;
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 640px) {
+      .tl-row { grid-template-columns: 28px 1fr; grid-template-rows: auto; }
+      .tl-spine { grid-column: 1; grid-row: 1; }
+      .tl-card.family { grid-column: 2; grid-row: 1; text-align: left; border-left: 3px solid var(--family-col); border-right: none; margin-right: 0; margin-left: 0.4rem; }
+      .tl-card.history { grid-column: 2; grid-row: 1; text-align: left; margin-left: 0.4rem; }
+      .tl-card.empty { display: none; }
+      .generation-label { padding-left: 2rem; }
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      background: var(--navy);
+      color: rgba(248,244,237,0.35);
+      font-family: 'Cinzel', serif;
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-ornament">Extracto Histórico</div>
+  <h1>Familia <span>Vila Villar</span></h1>
+  <div class="header-subtitle">Línea de tiempo — 1786 · 2024</div>
+</header>
+
+<div class="nav-back">
+  <a href="index.html">← Volver al mapa de lugares</a>
+</div>
+
+<div class="legend-bar">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--family-col)"></div>Hito familiar</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2a5c3f"></div>Nacimiento</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Boda</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#444"></div>Fallecimiento</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--history-col)"></div>Hito histórico</div>
+</div>
+
+<div class="timeline-wrapper">
+
+  <!-- Helper macros via JS -->
+  <div id="timeline"></div>
+
+</div>
+
+<footer>
+  Familia Vila Villar &mdash; Extracto Histórico y Reconstrucción del Árbol Genealógico &mdash; 3ª Edición, 2026
+</footer>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+// side: 'family' (left) | 'history' (right)
+// dot:  'family' | 'nacimiento' | 'boda' | 'muerte' | 'historia'
+const events = [
+
+  // ══ GENERACIÓN 1 ══════════════════════════════════════════════════════════
+  { year: 1786, side:'family',  dot:'nacimiento', gen:1,
+    title: 'Nace José Antonio de Vila y León',
+    sub:   'La Coruña · Tátara-tátara abuelo paterno',
+    detail: 'Hijo de Juan Andrés García de Vila y Juana Gabeiras y Lage. Capitán de navío y comerciante. Su familia adoptaría definitivamente el apellido Vila, abandonando el García precedente.' },
+
+  { year: 1790, side:'history', dot:'historia',
+    title: 'Revolución Francesa',
+    sub:   '1789–1799',
+    detail: 'La convulsión política que transformaría Europa afectaría profundamente a España y a las familias de la élite ilustrada del norte, a las que pertenecía la familia Vila.' },
+
+  { year: 1793, side:'family',  dot:'nacimiento', gen:1,
+    title: 'Nace Fermina Sánchez de León',
+    sub:   'La Coruña · Tátara-tátara abuela paterna',
+    detail: 'Futura esposa de José Antonio de Vila. Hija de Pedro Sánchez de León y María Marchante.' },
+
+  { year: 1808, side:'history', dot:'historia',
+    title: 'Guerra de la Independencia',
+    sub:   '1808–1814',
+    detail: 'La invasión napoleónica y la larga guerra que siguió marcaron la juventud de José Antonio de Vila, que tendría unos 22 años al inicio del conflicto.' },
+
+  { year: 1813, side:'family',  dot:'nacimiento', gen:1,
+    title: 'Nace Fermín de Vila y León',
+    sub:   'Ferrol · primer hijo de José Antonio y Fermina',
+    detail: 'Primogénito, bautizado en la iglesia de San Julián de Ferrol el 17 de septiembre de 1813. Fallecería en Bad Oldesloe (Hamburgo) en el invierno de 1829, con solo 16 años.' },
+
+  { year: 1820, side:'family',  dot:'boda', gen:1,
+    title: 'Boda de José Antonio de Vila y Fermina de León',
+    sub:   'La Coruña',
+    detail: 'Se casaron en La Coruña. Tendrían siete hijos: Fermín, Augusto José, Eduardo, Constantino, Josefa, Enriqueta y Sofía.' },
+
+  { year: 1820, side:'history', dot:'historia',
+    title: 'Trienio Liberal',
+    sub:   '1820–1823',
+    detail: 'El pronunciamiento de Riego restaura la Constitución de 1812. José Antonio de Vila, de ideas liberales, viviría con esperanza este período antes de la reacción absolutista.' },
+
+  { year: 1823, side:'history', dot:'historia',
+    title: 'Los Cien Mil Hijos de San Luis',
+    sub:   'Restauración del absolutismo',
+    detail: 'El ejército francés restaura a Fernando VII en el poder absoluto. Comienza la "Década Ominosa", época de represión liberal que afectaría directamente a José Antonio de Vila.' },
+
+  { year: 1819, side:'family',  dot:'nacimiento', gen:2,
+    title: 'Nace Augusto José de Vila y León',
+    sub:   'La Coruña · 15 de abril · Tátara-abuelo paterno',
+    detail: 'Segundo hijo de José Antonio de Vila y Fermina de León. Estudiaría en Crediton (Devon) y Bad Oldesloe (Hamburgo). Heredaría los negocios familiares y compraría los Astilleros de La Graña en 1861.' },
+
+  { year: 1828, side:'family',  dot:'family', gen:2,
+    title: 'Los hijos de José Antonio marchan a estudiar al extranjero',
+    sub:   'Londres y Hamburgo',
+    detail: 'Fermín parte hacia Islington (Londres) y posteriormente a Bad Oldesloe. Augusto José estudiaría en Crediton (Devon). Constantino seguiría sus pasos en Hamburgo. Una apuesta decidida por la educación ilustrada.' },
+
+  { year: 1829, side:'family',  dot:'muerte', gen:2,
+    title: 'Muere Fermín de Vila y León',
+    sub:   'Bad Oldesloe, Hamburgo · 16 años',
+    detail: 'El primogénito de José Antonio fallece en el invierno de 1829. Su tumba se conserva en el cementerio local de Bad Oldesloe.' },
+
+  { year: 1831, side:'family',  dot:'family', gen:1,
+    title: 'Arresto de José Antonio de Vila',
+    sub:   'La Coruña · abril–octubre de 1831',
+    detail: 'Es arrestado en la madrugada del 4 al 5 de abril, acusado de conspiración masónica contra Fernando VII. Permanece preso en el Castillo de San Antón hasta octubre, cuando es liberado.' },
+
+  { year: 1833, side:'history', dot:'historia',
+    title: 'Muerte de Fernando VII. Primera Guerra Carlista',
+    sub:   '1833–1840',
+    detail: 'La muerte del rey sin sucesor varón desencadena la guerra entre carlistas e isabelinos. Constantino de Vila, hijo de José Antonio, servirá en el ejército isabelino alcanzando el grado de Coronel.' },
+
+  // ══ GENERACIÓN 2 ══════════════════════════════════════════════════════════
+  { year: 1820, side:'family',  dot:'nacimiento', gen:2,
+    title: 'Nace Gertrudis Algorri Urioste',
+    sub:   'La Coruña · Tátara-abuela paterna',
+    detail: 'Hija de Ramón Algorri y Bibiana Urioste Cabiedes. Tendría 3 años en 1824. Moriría en la epidemia de cólera de 1854 con 33 años.' },
+
+  { year: 1839, side:'history', dot:'historia',
+    title: 'Abrazo de Vergara',
+    sub:   'Fin de la Primera Guerra Carlista',
+    detail: 'El convenio entre Espartero y Maroto pone fin a la Primera Guerra Carlista. Constantino de Vila y León, tío abuelo de la familia, participa en esta campaña.' },
+
+  { year: 1846, side:'family',  dot:'boda', gen:2,
+    title: 'Boda de Augusto José de Vila y Gertrudis Algorri',
+    sub:   'La Coruña',
+    detail: 'Se casaron en La Coruña. De este matrimonio nacería Eduardo Vila Algorri, nuestro bisabuelo paterno. Gertrudis fallecería en 1854 durante la epidemia de cólera.' },
+
+  { year: 1847, side:'history', dot:'historia',
+    title: 'Epidemia de cólera',
+    sub:   '1854',
+    detail: 'La epidemia de cólera de 1854 se cobra entre sus víctimas a Gertrudis Algorri Urioste, primera esposa de Augusto José de Vila, con tan solo 33 años.' },
+
+  { year: 1849, side:'family',  dot:'nacimiento', gen:3,
+    title: 'Nace Eduardo Vila Algorri',
+    sub:   'La Coruña · Bisabuelo paterno',
+    detail: 'Hijo de Augusto José de Vila y Gertrudis Algorri Urioste. Destacado ingeniero naval y empresario. La ciudad de La Coruña le dedicó una calle y un monolito en el puerto en 2012.' },
+
+  { year: 1854, side:'history', dot:'historia',
+    title: 'La Vicalvarada. Bienio Progresista',
+    sub:   '1854–1856',
+    detail: 'El pronunciamiento de O\'Donnell y Espartero abre un período liberal. La Revolución del 56 y el golpe de O\'Donnell contra Espartero provocarían el estado de guerra en Barcelona, donde Juan Villar Anchorena se incorporaría al ejército en 1857.' },
+
+  { year: 1858, side:'family',  dot:'muerte', gen:2,
+    title: 'Muere Fermina de León',
+    sub:   'La Coruña · Tátara-tátara abuela paterna',
+    detail: 'Fallece la esposa de José Antonio de Vila. Su funeral se celebró en la iglesia de San Nicolás. Está enterrada junto a su marido en el Cementerio de San Amaro.' },
+
+  { year: 1861, side:'family',  dot:'family', gen:2,
+    title: 'Augusto José de Vila compra los Astilleros de La Graña',
+    sub:   'Ferrol · 18 de febrero de 1861',
+    detail: 'Adquiere el Astillero del Reverbero en La Graña. En 1889 los reconvierte para construcción de buques de hierro, construyendo seis navíos de guerra para la Armada española. El Estado los incautaría en 1898.' },
+
+  { year: 1867, side:'family',  dot:'muerte', gen:1,
+    title: 'Muere José Antonio de Vila y León',
+    sub:   'La Coruña',
+    detail: 'Fallece el tátara-tátara abuelo paterno. Está enterrado junto a su esposa Fermina de León en el nicho 40/4R de la línea Santiago del Cementerio de San Amaro de La Coruña.' },
+
+  { year: 1874, side:'family',  dot:'muerte', gen:2,
+    title: 'Muere Augusto José de Vila y León',
+    sub:   'París · 28 de julio de 1874 · 55 años',
+    detail: 'Fallece en la Rue Chalgrin 16 del 16º arrondissement de París. Está enterrado en el Cementerio de San Amaro de La Coruña.' },
+
+  { year: 1874, side:'history', dot:'historia',
+    title: 'Restauración Borbónica',
+    sub:   '1874',
+    detail: 'Alfonso XII es proclamado rey. Comienza la Restauración, período de estabilidad política que coincide con la madurez de Eduardo Vila Algorri y su actividad empresarial en La Coruña.' },
+
+  // ══ GENERACIÓN 3 ══════════════════════════════════════════════════════════
+  { year: 1858, side:'family',  dot:'nacimiento', gen:3,
+    title: 'Nace Manuela Fano Díaz',
+    sub:   'La Coruña · Bisabuela paterna',
+    detail: 'Hija de Justo Pastor de Fano y Francisca Díaz Carcaño. Se casaría con Eduardo Vila Algorri en 1883.' },
+
+  { year: 1883, side:'family',  dot:'boda', gen:3,
+    title: 'Boda de Eduardo Vila Algorri y Manuela Fano Díaz',
+    sub:   'La Coruña',
+    detail: 'Se casaron en La Coruña. Sus hijos serían José, Jacoba, Eduardo, Francisco, Eliseo y Ana.' },
+
+  { year: 1889, side:'family',  dot:'family', gen:3,
+    title: 'Los Astilleros de Vila construyen sus primeros buques de guerra',
+    sub:   'La Graña, Ferrol · 1889–1897',
+    detail: 'Eduardo Vila Algorri reconvierte los astilleros paternos para construcción naval en hierro. Construyen los cañoneros torpederos Vicente Yáñez Pinzón, Galicia y Marqués de Molins, y los avisos torpederos María de Molina, Álvaro de Bazán y Marqués de la Victoria.' },
+
+  { year: 1892, side:'family',  dot:'nacimiento', gen:4,
+    title: 'Nace José Vila Fano',
+    sub:   'La Coruña · 11 de septiembre de 1892 · Abuelo paterno',
+    detail: 'Primer hijo de Eduardo Vila Algorri y Manuela Fano Díaz. Ingresaría en la Academia de Artillería de Segovia en 1910. Llegaría a General de Brigada. Falleció el 26 de marzo de 1976.' },
+
+  { year: 1895, side:'history', dot:'historia',
+    title: 'Guerra de Cuba. Desastre del 98',
+    sub:   '1895–1898',
+    detail: 'España pierde Cuba, Puerto Rico y Filipinas. En 1898 el Estado incauta los Astilleros de Vila y Cía en La Graña, en un contexto de reorganización de la industria naval española tras la derrota.' },
+
+  { year: 1899, side:'family',  dot:'muerte', gen:3,
+    title: 'Muere Eduardo Vila Algorri',
+    sub:   'La Coruña · Bisabuelo paterno',
+    detail: 'Fallece a los 50 años. La ciudad de La Coruña le dedicaría una calle y un monolito en el puerto en su memoria en 2012. Está enterrado en el nicho 1 del primer departamento del Cementerio de San Amaro.' },
+
+  // ══ RAMA VILLAR — GENERACIONES 1 y 2 ════════════════════════════════════
+  { year: 1813, side:'family',  dot:'nacimiento', gen:1,
+    title: 'Nace Eustaquio Peralta Sanz',
+    sub:   'Madrid · 2 de noviembre · Tátara-tátara abuelo materno',
+    detail: 'Bautizado en la iglesia de San Martín el 4 de noviembre. Militar de carrera, participó en la Primera Guerra Carlista y estuvo presente en el Abrazo de Vergara (1839).' },
+
+  { year: 1820, side:'family',  dot:'nacimiento', gen:1,
+    title: 'Nace María Maroto Herrero',
+    sub:   'Madrid · Tátara-tátara abuela materna',
+    detail: 'Bautizada en la iglesia de San José de Madrid. Esposa de Eustaquio Peralta Sanz. Fallecería el 12 de marzo de 1876.' },
+
+  { year: 1841, side:'family',  dot:'nacimiento', gen:2,
+    title: 'Nace Juan Villar Anchorena',
+    sub:   'Tudela, Navarra · 27 de mayo · Tátara-abuelo materno',
+    detail: 'Hijo de Marcos Villar Ladero y Avelina Anchorena Tellería. Militar de carrera, fallecería en Zamboanga (Filipinas) el 2 de abril de 1874 durante su destino militar.' },
+
+  { year: 1847, side:'family',  dot:'nacimiento', gen:2,
+    title: 'Nace María Peralta Maroto',
+    sub:   'Madrid · 29 de abril · Tátara-abuela materna',
+    detail: 'Hija de Eustaquio Peralta Sanz y María Maroto Herrero. Bautizada en la iglesia de San Luis de Madrid. Se casaría con Juan Villar Anchorena.' },
+
+  { year: 1868, side:'family',  dot:'boda', gen:2,
+    title: 'Boda de Juan Villar Anchorena y María Peralta Maroto',
+    sub:   'Madrid',
+    detail: 'Se casaron en Madrid. Sus hijos serían Ernesto y Luis Villar Peralta.' },
+
+  { year: 1868, side:'history', dot:'historia',
+    title: 'La Gloriosa. Sexenio Democrático',
+    sub:   '1868–1874',
+    detail: 'La revolución que derroca a Isabel II. Juan Villar Anchorena serviría en el ejército durante este convulso período hasta su muerte en Filipinas en 1874.' },
+
+  { year: 1874, side:'family',  dot:'muerte', gen:2,
+    title: 'Muere Juan Villar Anchorena',
+    sub:   'Zamboanga, Filipinas · 2 de abril de 1874',
+    detail: 'Fallece durante su destino militar en la isla de Mindanao (Filipinas). Su viuda, María Peralta Maroto, quedaría sola con dos hijos pequeños.' },
+
+  // ══ GENERACIÓN 3 — RAMA VILLAR ══════════════════════════════════════════
+  { year: 1872, side:'family',  dot:'nacimiento', gen:3,
+    title: 'Nace Ernesto Villar Peralta',
+    sub:   'Madrid · Bisabuelo materno',
+    detail: 'Hijo de Juan Villar Anchorena y María Peralta Maroto. Ingeniero militar, llegaría a General de Brigada. Se casaría con María Molina Ruiz-Marchante.' },
+
+  { year: 1876, side:'family',  dot:'nacimiento', gen:3,
+    title: 'Nace María Molina Ruiz-Marchante',
+    sub:   'Bisabuela materna',
+    detail: 'Se casaría con Ernesto Villar Peralta. Fallecería en agosto de 1910, tres meses después de dar a luz a su hija Elena.' },
+
+  { year: 1898, side:'family',  dot:'boda', gen:3,
+    title: 'Boda de Ernesto Villar Peralta y María Molina',
+    sub:   'Madrid',
+    detail: 'Se casaron en Madrid. Sus hijos serían Luis y Elena Villar Molina.' },
+
+  { year: 1898, side:'history', dot:'historia',
+    title: 'Crisis del 98. Generación del 98',
+    sub:   'España pierde su último imperio',
+    detail: 'La derrota ante Estados Unidos y la pérdida de Cuba, Puerto Rico y Filipinas provocan una profunda crisis nacional. Ernesto Villar Peralta, militar de carrera, viviría en primera persona esta convulsión.' },
+
+  { year: 1904, side:'family',  dot:'nacimiento', gen:4,
+    title: 'Nace Luis Villar Molina',
+    sub:   'Madrid · 3 de junio · Abuelo materno',
+    detail: 'Hijo de Ernesto Villar Peralta y María Molina. Ingeniero militar, llegaría a General de División. Se casaría con Isabel Seco San Martín. Falleció el 22 de mayo de 2025.' },
+
+  { year: 1910, side:'family',  dot:'muerte', gen:3,
+    title: 'Muere María Molina Ruiz-Marchante',
+    sub:   'Agosto de 1910 · Bisabuela materna',
+    detail: 'Fallece tres meses después de dar a luz a su hija Elena. Luis Villar Molina quedaría huérfano de madre con seis años.' },
+
+  // ══ SIGLO XX ═════════════════════════════════════════════════════════════
+  { year: 1910, side:'family',  dot:'family', gen:4,
+    title: 'José Vila Fano ingresa en la Academia de Artillería',
+    sub:   'Segovia · julio de 1910',
+    detail: 'Ingresa como alumno. Se graduaría como Primer Teniente de Artillería el 25 de junio de 1915. Su brillante carrera militar le llevaría al grado de General de Brigada.' },
+
+  { year: 1914, side:'history', dot:'historia',
+    title: 'Primera Guerra Mundial',
+    sub:   '1914–1918',
+    detail: 'España permanece neutral, pero el conflicto transforma Europa y afecta a la economía española. La generación de José Vila Fano y Ernesto Villar Peralta vive de cerca sus consecuencias.' },
+
+  { year: 1921, side:'history', dot:'historia',
+    title: 'Desastre de Annual. Directorio de Primo de Rivera',
+    sub:   '1921–1930',
+    detail: 'La derrota en Marruecos y la dictadura de Primo de Rivera marcan los años en que José Vila Fano se consolida como oficial de artillería. La crisis del Cuerpo de Artillería de 1926 le afectaría directamente.' },
+
+  { year: 1926, side:'family',  dot:'family', gen:4,
+    title: 'Crisis del Cuerpo de Artillería',
+    sub:   '1926',
+    detail: 'La disolución del Cuerpo de Artillería por Primo de Rivera crea un grave conflicto. José Vila Fano, como otros oficiales, viviría esta crisis con profunda amargura profesional.' },
+
+  { year: 1879, side:'family',  dot:'nacimiento', gen:3,
+    title: 'Nace Ricardo Seco de la Garza',
+    sub:   'Madrid · 10 de septiembre · Bisabuelo materno',
+    detail: 'Hijo de Ricardo Seco y Vittini y Emilia de la Garza Puig. Nació en la calle Villanueva 6 de Madrid. Pasaría su infancia en Cuba antes de instalarse definitivamente en La Coruña.' },
+
+  { year: 1905, side:'family',  dot:'nacimiento', gen:4,
+    title: 'Nace Isabel Seco San Martín',
+    sub:   'La Coruña · 15 de febrero · Abuela materna',
+    detail: 'Hija de Ricardo Seco de la Garza y María del Pilar San Martín Caamaño. Se casaría con Luis Villar Molina. Falleció en Majadahonda el 19 de octubre de 1985.' },
+
+  { year: 1925, side:'family',  dot:'boda', gen:4,
+    title: 'Boda de José Vila Fano y Bernarda Patiño Hermida',
+    sub:   'La Coruña',
+    detail: 'Se casaron en La Coruña. Sus hijos serían Eduardo Vila Patiño (nuestro padre) y Jacoba.' },
+
+  { year: 1929, side:'history', dot:'historia',
+    title: 'Gran Depresión',
+    sub:   '1929–1939',
+    detail: 'La crisis económica mundial alcanza a España en un momento de gran inestabilidad política, justo antes de la proclamación de la Segunda República.' },
+
+  { year: 1930, side:'family',  dot:'nacimiento', gen:5,
+    title: 'Nace Eduardo Vila Patiño',
+    sub:   'La Coruña · 2 de julio · Padre',
+    detail: 'Hijo de José Vila Fano y Bernarda Patiño Hermida. Militar de carrera en el Cuerpo de Intervención del Ejército. Falleció en Madrid el 11 de noviembre de 2020.' },
+
+  { year: 1930, side:'family',  dot:'boda', gen:4,
+    title: 'Boda de Luis Villar Molina e Isabel Seco San Martín',
+    sub:   'La Coruña',
+    detail: 'Se casaron en La Coruña. Sus hijos serían Pilar, Maribel y Luis.' },
+
+  { year: 1931, side:'history', dot:'historia',
+    title: 'Segunda República Española',
+    sub:   '1931–1936',
+    detail: 'La proclamación de la República transforma el panorama político. Ambas familias, de tradición militar y conservadora, viven con inquietud la radicalización del ambiente político.' },
+
+  { year: 1936, side:'history', dot:'historia',
+    title: 'Guerra Civil Española',
+    sub:   '1936–1939',
+    detail: 'El conflicto que dividiría España. El padre Eduardo Vila Patiño tenía 6 años al estallar. Su tío Manuel de Vierna mandaba el Crucero Baleares. Luis Villar Molina, ingeniero militar, serviría durante la guerra.' },
+
+  { year: 1938, side:'family',  dot:'family', gen:4,
+    title: 'Hundimiento del Crucero Baleares',
+    sub:   'Cabo de Palos · 6 de marzo de 1938',
+    detail: 'El Crucero Baleares, mandado por el Capitán de Navío Manuel de Vierna y Belando (cuñado del abuelo José Vila Fano), es hundido por torpedos republicanos. Muere Manuel de Vierna con casi toda su tripulación. Su esposa Jacoba Vila Fano recibirá la noticia por carta del Almirante Francisco Moreno.' },
+
+  { year: 1939, side:'history', dot:'historia',
+    title: 'Fin de la Guerra Civil. Régimen de Franco',
+    sub:   '1939–1975',
+    detail: 'La victoria franquista y la larga posguerra enmarcan la infancia y juventud de Eduardo Vila Patiño y Pilar Villar Seco, así como las carreras militares de sus padres.' },
+
+  { year: 1940, side:'family',  dot:'family', gen:4,
+    title: 'Ricardo Seco de la Garza compra el Pazo de Vilaboa',
+    sub:   'Rutis, A Coruña · noviembre de 1940',
+    detail: 'Antes llamado Pazo de La Milagrosa. El abuelo Luis Villar Molina se lo compraría en dos mitades: 1941 y 1948. Sería la casa de verano de la familia Villar Seco durante décadas.' },
+
+  // ══ GENERACIÓN 5 — NUESTROS PADRES ══════════════════════════════════════
+  { year: 1936, side:'family',  dot:'nacimiento', gen:5,
+    title: 'Nace Pilar Villar Seco',
+    sub:   'Madrid · Madre',
+    detail: 'Hija de Luis Villar Molina e Isabel Seco San Martín. Se casaría con Eduardo Vila Patiño el 22 de octubre de 1963 en la iglesia de San Agustín de Madrid.' },
+
+  { year: 1954, side:'family',  dot:'family', gen:5,
+    title: 'Eduardo Vila Patiño ingresa en el Ejército',
+    sub:   'Madrid · octubre de 1954',
+    detail: 'Ingresa en el Cuerpo de Intervención del Ejército de Tierra por oposición. Se graduaría como Teniente en julio de 1955. Llegaría al grado de General de Brigada.' },
+
+  { year: 1963, side:'family',  dot:'boda', gen:5,
+    title: 'Boda de Eduardo Vila Patiño y Pilar Villar Seco',
+    sub:   'Madrid · 22 de octubre de 1963',
+    detail: 'Se casaron en la iglesia parroquial de San Agustín de Madrid. Sus cinco hijos serían José, Isabel, Pilar, Eduardo y Jacobo.' },
+
+  { year: 1975, side:'history', dot:'historia',
+    title: 'Muerte de Franco. Transición Democrática',
+    sub:   '1975–1982',
+    detail: 'España inicia su transición a la democracia. Los cinco hijos de Eduardo y Pilar crecen durante este período histórico de profunda transformación del país.' },
+
+  // ══ GENERACIÓN 6 — NOSOTROS ══════════════════════════════════════════════
+  { year: 1964, side:'family',  dot:'nacimiento', gen:6,
+    title: 'Nace José Vila Villar',
+    sub:   'Madrid',
+    detail: 'Primer hijo de Eduardo Vila Patiño y Pilar Villar Seco. Casado con Teresa Recio Naranjo. Sus hijos: Eduardo, Teresa, Jacobo y Marta.' },
+
+  { year: 1966, side:'family',  dot:'nacimiento', gen:6,
+    title: 'Nace Isabel Vila Villar',
+    sub:   'Madrid',
+    detail: 'Segunda hija de Eduardo Vila Patiño y Pilar Villar Seco. Casada con Vicente Sánchez de Bustamante. Sus hijos: Antonio, Lucía y Santiago.' },
+
+  { year: 1968, side:'family',  dot:'nacimiento', gen:6,
+    title: 'Nace Pilar Vila Villar',
+    sub:   'Madrid',
+    detail: 'Tercera hija de Eduardo Vila Patiño y Pilar Villar Seco. Casada con Álvaro Marco de la Hoz. Sus hijos: Álvaro, Álvaro Javier, Fernando, María y Ana.' },
+
+  { year: 1970, side:'family',  dot:'nacimiento', gen:6,
+    title: 'Nace Eduardo Vila Villar',
+    sub:   'Madrid',
+    detail: 'Cuarto hijo de Eduardo Vila Patiño y Pilar Villar Seco. Casado con Alejandra Alcocer Suárez. Sus hijos: Bernardo e Inés.' },
+
+  { year: 1972, side:'family',  dot:'nacimiento', gen:6,
+    title: 'Nace Jacobo Vila Villar',
+    sub:   'Madrid',
+    detail: 'Quinto hijo de Eduardo Vila Patiño y Pilar Villar Seco. Casado con Paz Alcalde Delgado. Sus hijos: Alfonso y María.' },
+
+  { year: 1985, side:'family',  dot:'muerte', gen:5,
+    title: 'Muere Isabel Seco San Martín',
+    sub:   'Majadahonda · 19 de octubre de 1985 · Abuela materna',
+    detail: 'Fallece en su casa de verano de Majadahonda. Está enterrada junto a su marido Luis Villar Molina en el Cementerio El Cristo del Pardo.' },
+
+  { year: 1985, side:'family',  dot:'muerte', gen:5,
+    title: 'Muere Bernarda Patiño Hermida',
+    sub:   'Madrid · 9 de noviembre de 1985 · Abuela paterna',
+    detail: 'Fallece en la calle Santa Engracia 150 de Madrid. Está enterrada junto a su marido José Vila Fano en el Cementerio de Carabanchel Sur.' },
+
+  { year: 1976, side:'family',  dot:'muerte', gen:4,
+    title: 'Muere José Vila Fano',
+    sub:   'Madrid · 26 de marzo de 1976 · Abuelo paterno',
+    detail: 'Fallece el abuelo paterno, General de Brigada. Está enterrado en el Cementerio de Carabanchel Sur (Zona Adultos, Sección 8E, fila 5, nicho 21).' },
+
+  { year: 1992, side:'history', dot:'historia',
+    title: 'España en el mundo. Olimpiadas y Expo',
+    sub:   'Barcelona y Sevilla, 1992',
+    detail: 'Los Juegos Olímpicos de Barcelona y la Exposición Universal de Sevilla proyectan a España al mundo en un momento de plena madurez de la generación Vila Villar.' },
+
+  // ══ GENERACIÓN 7 — NUESTROS HIJOS ═══════════════════════════════════════
+  { year: 1990, side:'family',  dot:'nacimiento', gen:7,
+    title: 'Nace la generación de los nietos',
+    sub:   '1990–2010',
+    detail: 'Los hijos de los cinco hermanos Vila Villar: Eduardo, Teresa, Jacobo y Marta (hijos de José); Antonio, Lucía y Santiago (hijos de Isabel); Álvaro, Álvaro Javier, Fernando, María y Ana (hijos de Pilar); Bernardo e Inés (hijos de Eduardo); Alfonso y María (hijos de Jacobo).' },
+
+  { year: 2020, side:'family',  dot:'muerte', gen:5,
+    title: 'Muere Eduardo Vila Patiño',
+    sub:   'Madrid · 11 de noviembre de 2020 · Padre',
+    detail: 'Fallece en la calle Santa Engracia 150 de Madrid, la misma casa en la que había muerto su madre 35 años antes. Está enterrado en el Cementerio Municipal de Las Rozas (Columbario calle G, fila 2, número 17).' },
+
+  { year: 2020, side:'history', dot:'historia',
+    title: 'Pandemia de COVID-19',
+    sub:   '2020–2022',
+    detail: 'La pandemia transforma el mundo. Eduardo Vila Patiño fallece en noviembre de 2020, en el peor momento de la segunda ola en España.' },
+
+  { year: 2025, side:'family',  dot:'muerte', gen:4,
+    title: 'Muere Luis Villar Molina',
+    sub:   'Valencia · 22 de mayo de 2025 · Abuelo materno',
+    detail: 'Fallece el abuelo materno, General de División, a los 121 años de su nacimiento. Está enterrado junto a su esposa Isabel Seco San Martín en el Cementerio El Cristo del Pardo.' },
+
+];
+
+// Sort by year, family before history in same year
+events.sort((a, b) => a.year - b.year || (a.side === 'family' ? -1 : 1));
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+const dotClass = { family:'dot-family', nacimiento:'dot-nacimiento', boda:'dot-boda', muerte:'dot-muerte', historia:'dot-historia' };
+
+const genLabels = {
+  1: 'Generación I — Tátara-tátara abuelos (n. ~1786–1820)',
+  2: 'Generación II — Tátara-abuelos (n. ~1819–1847)',
+  3: 'Generación III — Bisabuelos (n. ~1849–1883)',
+  4: 'Generación IV — Abuelos (n. ~1892–1905)',
+  5: 'Generación V — Padres (n. ~1930–1936)',
+  6: 'Generación VI — Nosotros (n. ~1964–1972)',
+  7: 'Generación VII — Nuestros hijos',
+};
+
+// Group into "rows": pair family+history events near same year
+// Simple approach: render each event as its own row, empty on opposite side
+let lastGen = null;
+let lastEra = null;
+const eraBreaks = { 1808:'El siglo XIX', 1900:'El siglo XX', 1960:'La segunda mitad del siglo XX', 2000:'El siglo XXI' };
+
+const tl = document.getElementById('timeline');
+let html = '';
+
+events.forEach((ev, i) => {
+  // Era break
+  for (const [breakYear, label] of Object.entries(eraBreaks)) {
+    if (ev.year >= parseInt(breakYear) && (i === 0 || events[i-1].year < parseInt(breakYear))) {
+      html += `<div class="era-block"><div class="year-ruler"><div></div><div class="year-ruler-label">${breakYear}</div><div></div></div><div class="era-label">${label}</div></div>`;
+    }
+  }
+
+  // Generation label (only for family events with gen)
+  if (ev.gen && ev.gen !== lastGen && ev.side === 'family') {
+    lastGen = ev.gen;
+    if (genLabels[ev.gen]) {
+      html += `<div class="generation-label">${genLabels[ev.gen]}</div>`;
+    }
+  }
+
+  const dc = dotClass[ev.dot] || 'dot-family';
+  const cardClass = ev.side === 'family' ? 'family' : 'history';
+  const emptyClass = 'empty';
+
+  const card = `
+    <div class="tl-card ${cardClass}" onclick="this.classList.toggle('open')">
+      <div class="tl-year">${ev.year}</div>
+      <div class="tl-title">${ev.title}</div>
+      ${ev.sub ? `<div class="tl-subtitle">${ev.sub}</div>` : ''}
+      ${ev.detail ? `<div class="tl-detail">${ev.detail}</div>` : ''}
+    </div>`;
+
+  const empty = `<div class="tl-card ${emptyClass}"></div>`;
+  const spine = `<div class="tl-spine"><div class="tl-dot ${dc}"></div><div class="tl-spine-line"></div></div>`;
+
+  if (ev.side === 'family') {
+    html += `<div class="tl-row">${card}${spine}${empty}</div>`;
+  } else {
+    html += `<div class="tl-row">${empty}${spine}${card}</div>`;
+  }
+});
+
+tl.innerHTML = html;
+</script>
+</body>
+</html>
